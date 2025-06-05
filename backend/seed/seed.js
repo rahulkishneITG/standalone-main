@@ -26,7 +26,7 @@ const seedUsers = async () => {
       console.log('✅ Admin users seeded!');
     } else {
       console.log('ℹ️ Admin users already exist.');
-    }
+    } 
   } catch (err) {
     console.error('Seeding Error:', err);
     process.exit(1);

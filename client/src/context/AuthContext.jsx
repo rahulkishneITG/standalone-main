@@ -13,13 +13,12 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password, rememberMe) => {
     try {
-      console.log("BASEURL", BASE_URL);
-      console.log("Login attempt with email:", email,password, "rememberMe:", rememberMe);
+      
       showLoader();
       const res = await axios.post(`${BASE_URL}api/auth/login`, { email, password, rememberMe });
       localStorage.setItem('token', res.data.token);
-      console.log("Login response:", res.data.data);
-      setUser(res.data.data);
+      localStorage.setItem('user', JSON.stringify(res.data.userData));
+      setUser(res.data.userData);
     } catch (error) {
       console.error("Login Error", error);
       throw error;

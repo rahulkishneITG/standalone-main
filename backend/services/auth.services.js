@@ -9,7 +9,7 @@ exports.getUserForLogin = async (email, password, rememberMe) => {
   }
   try {
     const user = await User.findOne({ email }).select('+password');
-    console.log('User found:', user);
+   
     if (!user) {
       return null; // invalid credentials, handle in controller
     }
