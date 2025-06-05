@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
     console.log(email,password,rememberMe);
     const res = await axios.post(`${BASE_URL}api/auth/login`, { email, password, rememberMe });
     localStorage.setItem('token', res.data.token);
-    const userRes = await axios.get('http://localhost:5000/api/auth/', {
+    const userRes = await axios.get(`${BASE_URL}api/auth/`, {
       headers: { Authorization: `Bearer ${res.data.token}` },
     });
     setUser(userRes.data);
