@@ -1,4 +1,4 @@
-import { useState, useCallback, useContext } from 'react';
+import { useState, useCallback, useContext,useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Page,
@@ -22,6 +22,13 @@ const Login = () => {
     const [passwordError, setPasswordError] = useState('');
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            navigate('/dashboard');
+        }
+    },[navigate]);
 
     const validateEmail = (value) => {
         if (!value) {
@@ -59,7 +66,7 @@ const Login = () => {
                 toast.success('Login successful!');
                 setTimeout(() => {
                     navigate('/dashboard');
-                }, 1500);
+                }, 2000);
             } catch (error) {
                 toast.error('Login failed. Please try again.');
             }

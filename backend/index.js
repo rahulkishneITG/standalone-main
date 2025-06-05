@@ -7,7 +7,7 @@ const app = express();
 const server = http.createServer(app);
 const PORT = 5000;
 const bodyParser = require("body-parser");
-const authRoutes = require('./routes/auth.route.js');
+const routes = require('./routes/index.js');
 const connectDB = require('./config/db.js');
 const seeder = require('./seed/seed.js');
 
@@ -24,11 +24,11 @@ connectDB();
 seeder(); 
  
 // Routes
-app.use("/api/auth", authRoutes);
+app.use("/api", routes);
  
 // Test route
 app.use("/", (req, res) => {
-  res.send("Yes, now you hit APIs");
+  res.send("Yes, now you can hit APIs");
 });
  
 // Start the server
