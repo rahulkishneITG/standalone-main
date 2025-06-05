@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      axios.get(`${BASE_URL}/api/auth/`, {
+      axios.get(`${BASE_URL}api/auth/`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then(res => {
