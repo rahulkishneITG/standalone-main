@@ -1,0 +1,30 @@
+.mainLoginContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.mainHeading {
+    margin-bottom: 31px;
+}
+
+.loginCard {
+    width: 364px;
+    max-width: 364px;
+}
+
+.loginCardheader {
+    margin-bottom: 16px;
+}
+
+.signInBtn {
+    text-align: center;
+}
+
+@media screen and (max-width:490px) {
+    .loginCard {
+        width: 280px;
+        max-width: 364px;
+    }
+}
