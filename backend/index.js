@@ -11,11 +11,8 @@ const authRoutes = require('./routes/auth.route.js');
 const connectDB = require('./config/db.js');
 const seeder = require('./seed/seed.js');
 
-
 dotenv.config();
 
-
- 
 // Setup middlewares
 app.use(express.json());
 app.use(bodyParser.json());
@@ -33,8 +30,6 @@ app.use("/api/auth", authRoutes);
 app.use("/", (req, res) => {
   res.send("Yes, now you hit APIs");
 });
- 
- 
  
 // Start the server
 server.listen(PORT, () => {
