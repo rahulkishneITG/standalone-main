@@ -29,7 +29,9 @@ function App() {
               <Route
                 path="/"
                 element={
-                  <Login />
+                  <PublicRoute>
+                    <Login />
+                 </PublicRoute>
                 }
               />
               <Route

@@ -51,12 +51,6 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
   try {
-    // const token = localStorage.getItem('token');
-    // if (token) {
-    //   await axios.post('http://localhost:5000/api/auth/logout', {}, {
-    //     headers: { Authorization: `Bearer ${token}` },
-    //   });
-    // }
     localStorage.removeItem('token');
     setUser(null);
   } catch (error) {
