@@ -1,7 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLoader } from './LoaderContext';
-import {jwtDecode} from 'jwt-decode';
 
 const BASE_URL = process.env.REACT_APP_BASE_URL;
 export const AuthContext = createContext();
@@ -9,6 +8,7 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  
   const { showLoader, hideLoader } = useLoader();
 
   const login = async (email, password, rememberMe) => {
