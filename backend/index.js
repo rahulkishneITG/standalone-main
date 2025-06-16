@@ -10,6 +10,8 @@ const bodyParser = require("body-parser");
 const routes = require('./routes/index.js');
 const connectDB = require('./config/db.js');
 const seeder = require('./seed/seed.js');
+const eventseeder = require('./seed/eventseed.js')
+const groupregistre = require('./seed/groupregisterseed.js')
 
 dotenv.config();
 
@@ -22,6 +24,8 @@ app.use(cors());
 // Connect to DB
 connectDB();      
 seeder(); 
+eventseeder();
+groupregistre();
  
 // Routes
 app.use("/api", routes);

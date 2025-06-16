@@ -35,7 +35,7 @@ exports.generateToken = async (user, rememberMe) => {
 };
 
 
-exports.ismatchPassword = async (password, user) => {
+exports.ismatchPassword = async (password, user) => {   
     try {
         if (!user || !user.password) {
             throw new Error('User or password not found');
