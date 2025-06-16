@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 
 const groupMemberSchema = new mongoose.Schema({
@@ -26,3 +27,4 @@ const attendeeSchema = new mongoose.Schema({
 const Attendee = mongoose.model('attendee', attendeeSchema);
 
 module.exports = Attendee;
+
