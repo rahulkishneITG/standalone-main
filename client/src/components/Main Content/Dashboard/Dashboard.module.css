@@ -1,0 +1,33 @@
+.dashboard {
+    display: flex;
+    gap: 30px;
+    padding: 24px;
+    justify-content: center;
+    width: 100%;
+    max-width: 1152px;
+    margin: 0 auto;
+  }
+  .dashboardCard{
+    width: calc(30% - 30px* 2/3);
+    
+    max-width:calc(30% - 30px* 2/3);
+  }
+  .dashboardCardContentContainer{
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .dashboardCardHeaderText{
+    border-bottom: 1.5px dashed #EBEBEB;
+  }
+
+  @media screen and (max-width: 768px) {
+    .dashboard{
+      flex-direction: column;
+    }
+    .dashboardCard{
+      width: 100%;
+      max-width: 100%;
+    }
+  }
+  

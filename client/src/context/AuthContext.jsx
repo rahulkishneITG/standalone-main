@@ -10,15 +10,46 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   
   const { showLoader, hideLoader } = useLoader();
+  
+// Check for existing token and fetch user data on mount
+  useEffect(() => {
+    const initializeUser = async () => {
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+
+      if (token && storedUser) {
+        try {
+          showLoader();
+   
+          const res = await axios.get(`${BASE_URL}api/auth/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setUser(res.data.userData || JSON.parse(storedUser));
+        } catch (error) {
+          console.error('Error initializing user:', error);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+        } finally {
+          hideLoader();
+          setLoading(false);
+        }
+      } else {
+        setLoading(false); 
+      }
+    };
+
+    initializeUser();
+  }, []);
 
   const login = async (email, password, rememberMe) => {
     try {
-      
       showLoader();
       const res = await axios.post(`${BASE_URL}api/auth/login`, { email, password, rememberMe });
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.userData));
       setUser(res.data.userData);
+      setLoading(false);
     } catch (error) {
       console.error("Login Error", error);
       throw error;
@@ -39,6 +70,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error.message);
       hideLoader(); 
+      setLoading(false);
     }
   };
 

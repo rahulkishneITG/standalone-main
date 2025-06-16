@@ -26,7 +26,7 @@ const Login = () => {
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
-            navigate('/dashboard');
+            navigate('/');
         }
     },[navigate]);
 
@@ -65,7 +65,7 @@ const Login = () => {
                 await login(email, password, checked);
                 toast.success('Login successful!');
                 setTimeout(() => {
-                    navigate('/dashboard');
+                    navigate('/');
                 }, 2000);
             } catch (error) {
                 toast.error('Login failed. Please try again.');

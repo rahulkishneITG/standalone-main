@@ -1,0 +1,22 @@
+.footerContainer {
+    border-top: 1px solid #ddd;
+    padding: 12px;
+    text-align: center;
+    width: 100%; /* Matches the width of mainContent */
+    box-sizing: border-box;
+  }
+  
+
+  /* Ensure footer aligns with main content on larger screens */
+  @media (min-width: 991px) {
+    .footerContainer {
+      width: calc(100vw - 240px); /* Matches mainContent width */
+    }
+  }
+  
+  /* Full width on smaller screens */
+  @media (max-width: 990px) {
+    .footerContainer {
+      width: 100vw;
+    }
+  }
