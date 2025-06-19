@@ -1,0 +1,63 @@
+.header {
+  background-color: #fff;
+  border-bottom: 1px solid #dfe3e8;
+}
+
+.headerAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+    flex: 1;
+  padding-block: 14px;
+  padding-inline: 24px;
+  gap: 10px;
+  border-bottom: 1px solid #ddd;
+  }
+.headerAvatarInfo{
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  white-space: nowrap;
+  max-height: 32px;
+  height: 100%;
+}
+.headerAvatarIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.headerBottom{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  border-bottom: 1px solid #ddd;
+  background-color: #EBEBEB;
+}
+.headerBottomButtons{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sidebarToggle{
+  display: none;
+}
+@media screen and (max-width: 990px) {  
+  .headerAvatar{
+    justify-content: space-between;
+  }
+  .sidebarToggle{
+    display: block;
+  }
+}
+@media screen and (max-width: 479px) {  
+  .headerBottom{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+}
