@@ -5,7 +5,6 @@ const  authMiddleware  = require('../middleware/auth.middleware.js');
 
 
 router.get('/count', authMiddleware, getEventCount);
-router.get('/events', authMiddleware, getEventList);
-router.post('/createEvent',authMiddleware, createEvent);
-
+router.get('/getEventList',authMiddleware, getEventList);
+router.post('/createEvent',authMiddleware, createEvent); 
 module.exports = router;

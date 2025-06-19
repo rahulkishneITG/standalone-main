@@ -1,6 +1,12 @@
 const Events = require('../models/events.model.js');
-const eventServices = require('../services/eventService');
-const { getEventCountData } = require('../utils/eventUtils');
+const Attendee = require('../models/attendee.model.js');
+const GroupAttendee = require('../models/groupmember.model.js');
+const jwt = require('jsonwebtoken');
+const Services = require('../services/auth.services.js');
+const NodeCache = require('node-cache');
+const { getPaginatedEvents ,getEventCountData} = require('../services/eventService.js');
+
+const cache = new NodeCache({ stdTTL: 300 });
 
 
 exports.createEvent = async (req, res) => {
@@ -111,80 +117,33 @@ exports.createEvent = async (req, res) => {
     }
 };
 
-// exports.createEvent = async (req, res) => {
-//     try {
-//         const {
-//             name,
-//             status = 'active',
-//             draftStatus = false,
-//             event_date,
-//             event_time,
-//             location,
-//             max_capacity = 0,
-//             walk_in_capacity = 0,
-//             pre_registration_capacity = 0,
-//             pre_registration_start,
-//             pre_registration_end,
-//             description = '',
-//             allow_group_registration = false,
-//             enable_marketing_email = false,
-//             pricing_pre_registration = 0,
-//             pricing_walk_in = 0,
-//             image_url = '',
-//             shopify_product_id = '',
-//             created_by
-//         } = req.body;
 
-//         if (!name || !event_date || !event_time) {
-//             return res.status(400).json({ message: 'Required fields missing' });
-//         }
-
-//         const result = new Events({
-//             name,
-//             status,
-//             draftStatus,
-//             event_date,
-//             event_time,
-//             location,
-//             max_capacity,
-//             walk_in_capacity,
-//             pre_registration_capacity,
-//             pre_registration_start,
-//             pre_registration_end,
-//             description,
-//             allow_group_registration,
-//             enable_marketing_email,
-//             pricing_pre_registration,
-//             pricing_walk_in,
-//             image_url,
-//             shopify_product_id,
-//             created_by
-//         });
-
-//         await result.save();
-//         res.status(200).send("Event Details added");
-
-
-//     } catch (err) {
-//         console.error('Error saving event:', err);
-//         res.status(500).json({ message: 'Server error' });
-//     }
-// };
 
 exports.getEventList = async (req, res) => {
-    try {
-        const events = await eventServices.getEventList();
+  const {
+    page = 1,
+    limit = 10,
+    search = '',
+    sortBy = 'name',
+    order = 'asc',
+  } = req.query;
 
-        if (!events || events.length === 0) {
-            return res.status(404).json({ message: 'No events found' });
-        }
+  try {
+    const { events, total } = await getPaginatedEvents({
+      page,
+      limit,
+      search,
+      sortBy,
+      order,
+    });
 
-        res.status(200).json(events);
-    } catch (err) {
-        console.error('Error fetching events:', err);
-        res.status(500).json({ message: 'Server error' });
-    }
+    res.status(200).json({ data: events, total });
+  } catch (err) {
+    console.error('Error fetching events:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
+
 
 exports.getEventCount = async (req, res) => {
     try {
