@@ -4,7 +4,7 @@ const GroupAttendee = require('../models/groupmember.model.js');
 const jwt = require('jsonwebtoken');
 const Services = require('../services/auth.services.js');
 const NodeCache = require('node-cache');
-const { getPaginatedEvents ,getEventCountData} = require('../services/eventService.js');
+const { getPaginatedEvents ,getEventCountData} = require('../services/eventService.js');    
 
 const cache = new NodeCache({ stdTTL: 300 });
 
@@ -136,7 +136,6 @@ exports.getEventList = async (req, res) => {
       sortBy,
       order,
     });
-
     res.status(200).json({ data: events, total });
   } catch (err) {
     console.error('Error fetching events:', err);
