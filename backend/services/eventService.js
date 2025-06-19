@@ -29,11 +29,6 @@ const getPaginatedEvents = async ({ page, limit, search, sortBy, order }) => {
 };
 
 
-module.exports = {
-  getPaginatedEvents,
-};
-
-
 
 async function countGroupMembers(attendees) {
     let total = 0;
@@ -109,4 +104,4 @@ async function getEventCountData() {
 }
 
 
-module.exports = { getEventCountData };
+module.exports = { getEventCountData,getPaginatedEvents };
