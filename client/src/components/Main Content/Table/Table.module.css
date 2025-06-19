@@ -1,0 +1,23 @@
+.headerContainer {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem;
+  }
+  
+  .searchContainer {
+    flex: 1;
+    margin-right: 1rem;
+  }
+  
+  .actionsContainer {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  .paginationContainer {
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
+  }
+  

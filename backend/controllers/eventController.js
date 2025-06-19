@@ -4,6 +4,7 @@ const GroupAttendee = require('../models/groupmember.model.js');
 const jwt = require('jsonwebtoken');
 const Services = require('../services/auth.services.js');
 const NodeCache = require('node-cache');
+const { getPaginatedEvents } = require('../services/eventService.js');
 const cache = new NodeCache({ stdTTL: 300 });
 
 
@@ -66,19 +67,33 @@ exports.createEvent = async (req, res) => {
     }
 };
 
-exports.getEventList = async (req, res) => {
-    const cached = cache.get('events');
-    if (cached) return res.status(200).json(cached);
 
-    try {
-        const events = await Events.find().lean();
-        cache.set('events', events);
-        res.status(200).json(events);
-    } catch (err) {
-        console.error('Error fetching events:', err);
-        res.status(500).json({ message: 'Server error' });
-    }
+
+exports.getEventList = async (req, res) => {
+  const {
+    page = 1,
+    limit = 10,
+    search = '',
+    sortBy = 'name',
+    order = 'asc',
+  } = req.query;
+
+  try {
+    const { events, total } = await getPaginatedEvents({
+      page,
+      limit,
+      search,
+      sortBy,
+      order,
+    });
+
+    res.status(200).json({ data: events, total });
+  } catch (err) {
+    console.error('Error fetching events:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
+
 
 exports.getEventCount = async (req, res) => {
     try {

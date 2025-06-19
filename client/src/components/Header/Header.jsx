@@ -4,16 +4,72 @@ import styles from './Header.module.css';
 import { MenuIcon } from '@shopify/polaris-icons';
 import useSidebarStore from '../../store/sidebarStore';
 import { AuthContext } from '../../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import FullPageLoader from '../Loader';
 
 const Header = () => {
   const { toggleSidebar } = useSidebarStore();
   const { user, loading } = useContext(AuthContext);
-  console.log(user);
+  const location = useLocation();
+
   if (loading) {
     return <FullPageLoader />;
   }
+
+  const getPageTitle = () => {
+    const path = location.pathname;
+
+    if (path === '/') return 'Home';
+    if (path.startsWith('/event/create')) return 'Create Event';
+    if (path.startsWith('/event/edit')) return 'Edit Event';
+    if (path.startsWith('/event')) return 'All Event';
+    if (path.startsWith('/attendee')) return 'All Attendee';
+
+    return 'Dashboard';
+  };
+
+  const getPageActions = () => {
+    const path = location.pathname;
+    if (path === '/'){
+      return (
+        <>
+          <Link to="/event/create">
+              <Button variant="primary" tone="primary">Create Event</Button>
+            </Link>
+            <Link to="/attendee">
+              <Button variant="primary" tone="primary">View Attendee List</Button>
+            </Link>
+        </>
+      );
+    }
+    if (path.startsWith('/event/create') || path.startsWith('/event/edit')) {
+      return null;
+    }
+
+    if (path.startsWith('/event')) {
+      return (
+        <Link to="/event/create">
+          <Button variant="primary" tone="primary">Create Event</Button>
+        </Link>
+      );
+    }
+
+    if (path.startsWith('/attendee')) {
+      return (
+        <>
+          <Link to="/attendee/export">
+            <Button variant="primary" tone="primary">Export as CSV</Button>
+          </Link>
+          <Link to="/attendee/import">
+            <Button variant="primary" tone="primary">Bulk import attendees</Button>
+          </Link>
+        </>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className={styles.header}>
       <div className={styles.headerContainer}>
@@ -32,15 +88,10 @@ const Header = () => {
         </div>
         <div className={styles.headerBottom}>
           <Text variant="headingLg" as="h2" fontWeight="semibold">
-            Home
+            {getPageTitle()}
           </Text>
           <div className={styles.headerBottomButtons}>
-            <Link to="/event/create">
-              <Button variant="primary" tone="primary">Create Event</Button>
-            </Link>
-            <Link to="/attendee">
-              <Button variant="primary" tone="primary">View Attendee List</Button>
-            </Link>
+            {getPageActions()}
           </div>
         </div>
       </div>
