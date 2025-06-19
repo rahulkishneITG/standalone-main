@@ -3,7 +3,7 @@ import styles from './ProtectedLayout.module.css';
 import Sidebar from '../components/Sidebar/Sidebar';
 import Footer from '../components/Footer/footer';
 import { Outlet } from 'react-router-dom';
-import Header from '../components/Header/Header';
+import Header from '../components/Header/Header'; 
 import useSidebarStore from '../store/sidebarStore';
 import { XIcon } from '@shopify/polaris-icons';
 import { Icon } from '@shopify/polaris';
@@ -13,7 +13,7 @@ const ProtectedLayouts = () => {
 
   return (
     <div className={styles.protectedLayout}>
-      <div className={`${styles.sidebar} ${isSidebarOpen ? styles.open : ''}`}> {/* Sidebar */}   
+      <div className={`${styles.sidebar} ${isSidebarOpen ? styles.open : ''}`}>  
         <div className={styles.sidebarHeader}>  
           {isSidebarOpen && (
             <button

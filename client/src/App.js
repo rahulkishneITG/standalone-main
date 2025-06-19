@@ -7,17 +7,17 @@ import enTranslations from '@shopify/polaris/locales/en.json';
 import '@shopify/polaris/build/esm/styles.css';
 import { AuthContext, AuthProvider } from './context/AuthContext';
 import { LoaderProvider, useLoader } from './context/LoaderContext';
-import Dashboard from './components/Main Content/Dashboard/Dashboard'; 
+import Dashboard from './pages/Dashboard/Dashboard';   
 import { Toaster } from 'react-hot-toast';
 import FullPageLoader from './components/Loader';
 import ProtectedRoute from './components/ProtectedRoute';
 import ProtectedLayout from './layouts/ProtectedLayouts';
-import Event from './components/Main Content/Event/Event';
-import Attendee from './components/Main Content/Attendee/Attendee';
-import CreateEvent from './components/Main Content/Event/Create Event/CreateEvent';
-import EditEvent from './components/Main Content/Event/Edit Event/EditEvent';
-import EventList from './components/Main Content/Event/EventList/EventList';
-import { PageNotFound } from './components/404Page/PageNotFound';
+import Event from './pages/Event/Event';  
+import Attendee from './pages/Attendee/Attendee'; 
+import CreateEvent from './pages/Event/Create Event/CreateEvent';
+import EditEvent from './pages/Event/Edit Event/EditEvent';
+import EventList from './pages/Event/EventList/EventList';
+import { PageNotFound } from './pages/404Page/PageNotFound';
 
 function AppWrapper() {
   const { loading } = useLoader();
