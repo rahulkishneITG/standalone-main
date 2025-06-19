@@ -136,7 +136,7 @@ exports.getEventList = async (req, res) => {
       sortBy,
       order,
     });
-
+    
     res.status(200).json({ data: events, total });
   } catch (err) {
     console.error('Error fetching events:', err);

@@ -1,37 +1,6 @@
-const Events = require('../models/events.model.js');  
+const Events = require('../models/events.model.js');
 const Attendee = require('../models/attendee.model.js');
 const GroupAttendee = require('../models/groupmember.model.js');
-
-const getPaginatedEvents = async ({ page, limit, search, sortBy, order }) => {
-  const skip = (parseInt(page) - 1) * parseInt(limit);
-  const sortOrder = order === 'asc' ? 1 : -1;
-
-  const query = search
-    ? {
-        $or: [
-          { name: { $regex: search, $options: 'i' } },
-          { location: { $regex: search, $options: 'i' } },
-          { status: { $regex: search, $options: 'i' } },
-        ],
-      }
-    : {};
-
-  const [events, total] = await Promise.all([
-    Events.find(query)
-      .sort({ [sortBy]: sortOrder })
-      .skip(skip)
-      .limit(parseInt(limit))
-      .lean(),
-    Events.countDocuments(query),
-  ]);
-
-  console.log('Event',Events);
-
-  return { events, total };
-};
-
-console.log('getPaginatedEvents',getPaginatedEvents)
-
 
 async function countGroupMembers(attendees) {
     let total = 0;
@@ -106,5 +75,4 @@ async function getEventCountData() {
     }
 }
 
-
-module.exports = { getEventCountData,getPaginatedEvents };
+module.exports = { getEventCountData };
