@@ -25,9 +25,10 @@ const getPaginatedEvents = async ({ page, limit, search, sortBy, order }) => {
     Events.countDocuments(query),
   ]);
 
+  console.log('Event',Events);
+
   return { events, total };
 };
-
 
 
 async function countGroupMembers(attendees) {
@@ -103,5 +104,99 @@ async function getEventCountData() {
     }
 }
 
+const createEventService = async (data) => {
+  try {
+    const {
+      name,
+      status = 'active',
+      draftStatus = false,
+      event_date,
+      event_time,
+      location,
+      max_capacity = 0,
+      walk_in_capacity = 0,
+      pre_registration_capacity = 0,
+      pre_registration_start,
+      pre_registration_end,
+      description = '',
+      allow_group_registration = false,
+      enable_marketing_email = false,
+      pricing_pre_registration = 0,
+      pricing_walk_in = 0,
+      image_url = '',
+      shopify_product_id = '',
+      created_by
+    } = data;
 
-module.exports = { getEventCountData,getPaginatedEvents };
+    // Validate required fields
+    const requiredFields = { name, event_date, event_time, location, created_by };
+    for (const [field, value] of Object.entries(requiredFields)) {
+      if (!value) return { error: `Missing required field: ${field}` };
+    }
+
+    // Validate dates
+    const isValidDate = (d) => d && !isNaN(new Date(d).getTime());
+    if (!isValidDate(event_date)) return { error: 'Invalid event_date format' };
+    if (pre_registration_start && !isValidDate(pre_registration_start)) {
+      return { error: 'Invalid pre_registration_start format' };
+    }
+    if (pre_registration_end && !isValidDate(pre_registration_end)) {
+      return { error: 'Invalid pre_registration_end format' };
+    }
+
+    // Validate numeric values
+    const nonNegativeCheck = [
+      { field: 'max_capacity', value: max_capacity },
+      { field: 'walk_in_capacity', value: walk_in_capacity },
+      { field: 'pre_registration_capacity', value: pre_registration_capacity },
+      { field: 'pricing_pre_registration', value: pricing_pre_registration },
+      { field: 'pricing_walk_in', value: pricing_walk_in }
+    ];
+    for (const { field, value } of nonNegativeCheck) {
+      if (value < 0) return { error: `${field} must be a non-negative number` };
+    }
+
+    // Create and save the event
+    const event = new Events({
+      name,
+      status,
+      draftStatus,
+      event_date,
+      event_time,
+      location,
+      max_capacity,
+      walk_in_capacity,
+      pre_registration_capacity,
+      pre_registration_start,
+      pre_registration_end,
+      description,
+      allow_group_registration,
+      enable_marketing_email,
+      pricing_pre_registration,
+      pricing_walk_in,
+      image_url,
+      shopify_product_id,
+      created_by
+    });
+
+    // Determine and assign status
+    const now = new Date();
+    const eventDate = new Date(event_date);
+    event.status = now > eventDate ? 'past' : 'upcoming';
+
+    await event.save();
+
+    return { event };
+  } catch (err) {
+    console.error('Service error:', err);
+    throw err;
+  }
+};
+
+const getEventByIdService = async (eventId) => {
+  return await Events.findById(eventId);
+};
+
+
+
+module.exports = { getEventCountData,getPaginatedEvents,createEventService, getEventByIdService};

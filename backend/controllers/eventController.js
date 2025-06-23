@@ -4,75 +4,114 @@ const GroupAttendee = require('../models/groupmember.model.js');
 const jwt = require('jsonwebtoken');
 const Services = require('../services/auth.services.js');
 const NodeCache = require('node-cache');
-const { getPaginatedEvents ,getEventCountData} = require('../services/eventService.js');    
+const { getPaginatedEvents, getEventCountData, createEventService } = require('../services/eventService.js');
 
 const cache = new NodeCache({ stdTTL: 300 });
 
-
 exports.createEvent = async (req, res) => {
     try {
+        const result = await createEventService(req.body);
+
+        if (result.error) {
+            return res.status(400).json({ message: result.error });
+        }
+
+        return res.status(201).json({
+            message: 'Event created successfully',
+            event: result.event
+        });
+
+    } catch (err) {
+        console.error('Error creating event:', err);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+exports.getEventList = async (req, res) => {
+    const {
+        page = 1,
+        limit = 10,
+        search = '',
+        sortBy = 'name',
+        order = 'asc',
+    } = req.query;
+
+    try {
+        const { events, total } = await getPaginatedEvents({
+            page,
+            limit,
+            search,
+            sortBy,
+            order,
+        });
+        res.status(200).json({ data: events, total });
+    } catch (err) {
+        console.error('Error fetching events:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+exports.getEventCount = async (req, res) => {
+    try {
+        const data = await getEventCountData();
+        res.status(200).json(data);
+    } catch (err) {
+        console.error('Error counting events:', err);
+        res.status(500).json({ error: 'Failed to count events' });
+    }
+};
+
+exports.deletedEvet = async (req, res) => {
+    const { delId } = req.body;
+
+    if (!delId || typeof delId !== 'string') {
+        return res.status(400).json({ error: "Invalid or missing delId." });
+    }
+
+    try {
+
+        const result = await Events.findByIdAndDelete(delId);
+
+        if (!result) {
+            return res.status(404).json({ message: "Record not found" });
+        }
+
+        res.status(200).json({ message: "Deleted successfully", deleted: result });
+    } catch (error) {
+        console.error("Error deleting document:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+exports.editEvent = async (req, res) => {
+    try {
+        const { editId } = req.body;
+
+        if (!editId || typeof editId !== 'string') {
+            return res.status(400).json({ error: 'Invalid or missing editId.' });
+        }
+
+        const event = await Events.findById(editId);
+
+        if (!event) {
+            return res.status(404).json({ error: 'Event not found.' });
+        }
+
+        return res.status(200).json({
+            message: 'Event fetched successfully.',
+            data: event
+        });
+
+    } catch (error) {
+        console.error('Error fetching event:', error.message);
+        return res.status(500).json({ error: 'Internal server error.' });
+    }
+};
+
+exports.updateEventData = async (req, res) => {
+    try {
         const {
-            name,
-            status = 'active',
-            draftStatus = false,
-            event_date,
-            event_time,
-            location,
-            max_capacity = 0,
-            walk_in_capacity = 0,
-            pre_registration_capacity = 0,
-            pre_registration_start,
-            pre_registration_end,
-            description = '',
-            allow_group_registration = false,
-            enable_marketing_email = false,
-            pricing_pre_registration = 0,
-            pricing_walk_in = 0,
-            image_url = '',
-            shopify_product_id = '',
-            created_by
-        } = req.body;
-
-       
-        if (!name || !event_date || !event_time || !location || !created_by) {
-            return res.status(400).json({
-                message: 'Required fields: name, event_date, event_time, location, created_by'
-            });
-        }
-
-        
-        const eventDate = new Date(event_date);
-        const currentDate = new Date();
-        if (isNaN(eventDate.getTime())) {
-            return res.status(400).json({ message: 'Invalid event_date format' });
-        }
-        if (pre_registration_start && isNaN(new Date(pre_registration_start).getTime())) {
-            return res.status(400).json({ message: 'Invalid pre_registration_start date' });
-        }
-        if (pre_registration_end && isNaN(new Date(pre_registration_end).getTime())) {
-            return res.status(400).json({ message: 'Invalid pre_registration_end date' });
-        }
-
-       
-        if (
-            max_capacity < 0 ||
-            walk_in_capacity < 0 ||
-            pre_registration_capacity < 0
-        ) {
-            return res.status(400).json({
-                message: 'Capacities must be non-negative numbers'
-            });
-        }
-
-        
-        if (pricing_pre_registration < 0 || pricing_walk_in < 0) {
-            return res.status(400).json({
-                message: 'Pricing values must be non-negative numbers'
-            });
-        }
-
-       
-        const result = new Events({
+            _id,
             name,
             status,
             draftStatus,
@@ -91,67 +130,44 @@ exports.createEvent = async (req, res) => {
             pricing_walk_in,
             image_url,
             shopify_product_id,
-            created_by
-        });
+        } = req.body;
 
-        await result.save();
-
-       
-        const createdDate = new Date(result.created_at);
-        let updatedStatus = result.status;
-
-        if (createdDate > eventDate) {
-            updatedStatus = 'past';
-        } else {
-            updatedStatus = 'upcoming';
+        if (!_id || typeof _id !== 'string') {
+            return res.status(400).json({ error: "Missing or invalid event ID" });
         }
 
-        result.status = updatedStatus;
-        await result.save();
+        const updatedEvent = await updateEventService(_id, {
+            name,
+            status,
+            draftStatus,
+            event_date,
+            event_time,
+            location,
+            max_capacity,
+            walk_in_capacity,
+            pre_registration_capacity,
+            pre_registration_start,
+            pre_registration_end,
+            description,
+            allow_group_registration,
+            enable_marketing_email,
+            pricing_pre_registration,
+            pricing_walk_in,
+            image_url,
+            shopify_product_id,
+            updated_at: new Date()
+        });
 
-        res.status(200).send("Event Details added and status updated");
+        return res.status(200).json({
+            message: "Event updated successfully",
+            data: updatedEvent,
+        });
 
     } catch (err) {
-        console.error('Error saving event:', err);
-        res.status(500).json({ message: 'Server error' });
+        console.error("Error updating event:", err.message);
+        return res.status(500).json({ error: err.message });
     }
 };
 
-
-
-exports.getEventList = async (req, res) => {
-  const {
-    page = 1,
-    limit = 10,
-    search = '',
-    sortBy = 'name',
-    order = 'asc',
-  } = req.query;
-
-  try {
-    const { events, total } = await getPaginatedEvents({
-      page,
-      limit,
-      search,
-      sortBy,
-      order,
-    });
-    res.status(200).json({ data: events, total });
-  } catch (err) {
-    console.error('Error fetching events:', err);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-
-exports.getEventCount = async (req, res) => {
-    try {
-        const data = await getEventCountData();
-        res.status(200).json(data);
-    } catch (err) {
-        console.error('Error counting events:', err);
-        res.status(500).json({ error: 'Failed to count events' });
-    }
-};
 
 
