@@ -1,4 +1,4 @@
-// seed/seed.js
+
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const Groupmember = require('../models/groupmember.model.js');
@@ -37,8 +37,8 @@ const eventData = async () => {
                     name: `Leader-${i}`,
                     email: `leader${i}@example.com`,
                     group_member_details,
-                    registration_type: 'Pre',
-                    is_paid: true,
+                    registration_type: 'Group',
+                    is_paid: true ? "Yes" : "No",
                     amount_paid: 100 + i * 10,
                     registered_at: new Date(),
                     source: 'seeder-script',
@@ -64,8 +64,8 @@ const eventData = async () => {
                     event_id,
                     name: `SoloUser-${i}`,
                     email: `solo${i}@example.com`,
-                    registration_type: 'Pre',
-                    is_paid: false,
+                    registration_type: 'Individual',
+                    is_paid: false ? "No" : "Yes",
                     amount_paid: 0,
                     registered_at: new Date(),
                     source: 'seeder-script',

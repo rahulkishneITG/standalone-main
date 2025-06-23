@@ -1,9 +1,10 @@
 const attendeeService = require('../services/attendeeService.js');
-const { createAttendeeService } = require('../services/attendee.service');
+const { createAttendeeService } = require('../services/attendee.services');
 
 
 exports.getAttendeeList = async (req, res) => {
   try {
+    console.log(">>> Incoming queryParams:", req.query);
     const data = await attendeeService.getAttendeeList(req.query);
     console.log('data', data);
     res.json(data);

@@ -6,7 +6,7 @@ import { formatDate } from '../../../utils/dateFormatter.js';
 import FullPageLoader from '../../../components/Loader';
 import TableHeader from '../../../components/Main Content/Table/TableHeader';
 import TableRow from '../../../components/Main Content/Table/TableRow';
-import useDebounce from '../../../hooks/useDebounce.js'; 
+import useDebounce from '../../../hooks/useDebounce.js';
 import styles from './EventList.module.css';
 
 const ROWS_PER_PAGE = 3;
@@ -17,7 +17,7 @@ const EventTable = () => {
   const [sortOrder, setSortOrder] = useState('asc');
   const [currentPage, setCurrentPage] = useState(1);
 
-  const debouncedSearch = useDebounce(searchValue, 500);
+  const debouncedSearch = useDebounce(searchValue, 100);
   const isFirstLoad = useRef(true);
 
   const { eventList, totalCount, loading, fetchEventList, deleteEvent } = useEventStore();
@@ -89,7 +89,7 @@ const EventTable = () => {
 
   const totalPages = Math.ceil(totalCount / ROWS_PER_PAGE);
 
-    
+
   if (loading && isFirstLoad.current) return <FullPageLoader />;
 
   return (
