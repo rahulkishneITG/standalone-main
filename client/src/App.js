@@ -18,6 +18,7 @@ import CreateEvent from './pages/Event/Create Event/CreateEvent';
 import EditEvent from './pages/Event/Edit Event/EditEvent';
 import EventList from './pages/Event/EventList/EventList';
 import { PageNotFound } from './pages/404Page/PageNotFound';
+import SettingsPage from './pages/Settings/SettingsPage';
 
 function AppWrapper() {
   const { loading } = useLoader();
@@ -57,7 +58,8 @@ function AppWrapper() {
                     <Route path="create" element={<CreateEvent />} />
                     <Route path="edit/:id" element={<EditEvent />} />
                   </Route> 
-                  <Route path="attendee" element={<Attendee />} />   
+                  <Route path="attendee" element={<Attendee />} />  
+                  <Route path="settings" element={<SettingsPage />} /> 
                 </Route>
                 <Route path="*" element={<PageNotFound />} />
               </Routes>

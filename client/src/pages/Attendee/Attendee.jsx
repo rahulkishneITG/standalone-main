@@ -14,6 +14,7 @@ import { SortIcon } from '@shopify/polaris-icons';
 import AttendeeTable from '../../components/Main Content/Table/AttendeeTable';
 import { useAttendeeStore } from '../../store/attendeeStore.js';
 
+
 const AttendeePage = () => {
   const {
     attendees,
@@ -148,7 +149,7 @@ const AttendeePage = () => {
         )}
 
         {totalAttendees > itemsPerPage && (
-          <div style={{ padding: '1rem', display: 'flex', justifyContent: 'center' }}>
+          <div style={{display: 'flex', justifyContent: 'center',padding: "6px",backgroundColor: "#F7F7F7",borderTop: "1px solid #E0E0E0"}}>
             <Pagination
               hasPrevious={currentPage > 1}
               onPrevious={() => setPage(currentPage - 1)}

@@ -13,8 +13,37 @@ export const getEventList = async ({ page, limit, search, sortBy, order }) => {
   return data;
 };
 
-export const deleteEventById = async (eventId) => {
-  await axios.delete(`${BASE_URL}/deleteEvent/${eventId}`, {
-    headers: getAuthHeaders(),
-  });
+export const  deleteEventById = async (eventId) => {
+  if (!eventId || typeof eventId !== 'string') {
+    throw new Error('Invalid or missing event ID');
+  }
+
+  try {
+    const url = `${BASE_URL}/deletedEvent/${eventId}`;
+
+    const response = await axios.delete(url, {
+      headers: getAuthHeaders(),
+    });
+    console.log('response:', response.data)
+    return response.data;
+  } catch (error) {
+    console.error('[API Delete Error]:', error?.response?.data || error.message);
+    throw error; 
+  }
+};
+export const getEditEventData = async (eventId) => {
+  console.log(eventId)
+  if (!eventId || typeof eventId !== 'string') {
+    throw new Error('Invalid or missing event ID');
+  }
+  try {
+    const url = `${BASE_URL}/editEvent/${eventId}`;  
+    const response = await axios.get(url, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[API Error]:', error?.response?.data || error.message);
+    throw error; 
+  }
 };

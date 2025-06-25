@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Card, IndexTable, Page, Pagination } from '@shopify/polaris';
+import { Card, IndexTable, Page, Pagination, Spinner, Modal, TextContainer } from '@shopify/polaris';
 import { useNavigate } from 'react-router-dom';
 import useEventStore from '../../../store/eventStore';
 import { formatDate } from '../../../utils/dateFormatter.js';
@@ -8,6 +8,7 @@ import TableHeader from '../../../components/Main Content/Table/TableHeader';
 import TableRow from '../../../components/Main Content/Table/TableRow';
 import useDebounce from '../../../hooks/useDebounce.js';
 import styles from './EventList.module.css';
+import toast from 'react-hot-toast';
 
 const ROWS_PER_PAGE = 3;
 
@@ -16,6 +17,8 @@ const EventTable = () => {
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   const [currentPage, setCurrentPage] = useState(1);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState(null);
 
   const debouncedSearch = useDebounce(searchValue, 100);
   const isFirstLoad = useRef(true);
@@ -44,8 +47,23 @@ const EventTable = () => {
   };
 
   const handleDelete = (index) => {
-    const eventId = eventList[index]._id;
-    deleteEvent(eventId, fetchData);
+    setDeleteIndex(index);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    const eventId = eventList[deleteIndex]._id;
+    setShowDeleteModal(false);
+    await deleteEvent(eventId, () => {
+      fetchEventList({
+        page: currentPage,
+        limit: ROWS_PER_PAGE,
+        search: debouncedSearch,
+        sortBy,
+        order: sortOrder,
+      });
+      toast.success('Event deleted successfully');
+    });
   };
 
   const handleSearchChange = (value) => {
@@ -76,16 +94,29 @@ const EventTable = () => {
       event._id,
     ]);
   }, [eventList]);
-
-  const rowMarkup = paginatedRows.map((row, index) => (
-    <TableRow
-      key={index}
-      index={index}
-      row={row}
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-    />
-  ));
+  
+  const rowMarkup = loading ? (
+    <IndexTable.Row>
+      <IndexTable.Cell colSpan={8}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2rem', width: '100%' }}>
+          <Spinner accessibilityLabel="Loading attendees" size="large" />
+        </div>
+      </IndexTable.Cell>
+    </IndexTable.Row>
+  ) : (
+    paginatedRows.map((row, index) => (
+      <TableRow
+        key={index}
+        index={index}
+        row={row}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+    ))
+  );
+  
+  
+  
 
   const totalPages = Math.ceil(totalCount / ROWS_PER_PAGE);
 
@@ -94,8 +125,33 @@ const EventTable = () => {
 
   return (
     <div className={styles.eventList}>
+      <Modal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Delete Event"
+        primaryAction={{
+          content: 'Delete',
+          destructive: true,
+          onAction: async () => {
+            await handleDeleteConfirmed();
+          },
+        }}
+        secondaryActions={[
+          {
+            content: 'Cancel',
+            onAction: () => setShowDeleteModal(false),
+          },
+        ]}
+      >
+        <Modal.Section>
+          <TextContainer>
+            Are you sure you want to delete this event? This action cannot be undone.
+          </TextContainer>
+        </Modal.Section>
+      </Modal>
       <Page fullWidth>
         <Card padding="0">
+        
           <TableHeader
             value={searchValue}
             onChange={handleSearchChange}
@@ -117,7 +173,9 @@ const EventTable = () => {
             ]}
             selectable={false}
           >
+            
             {rowMarkup}
+            
           </IndexTable>
 
           <div className={styles.paginationContainer}>

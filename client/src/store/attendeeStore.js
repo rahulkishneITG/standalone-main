@@ -4,32 +4,36 @@ import { getAttendeeList } from '../api/attendeeApi.js';
 export const useAttendeeStore = create((set, get) => ({
   attendees: [],
   totalAttendees: 0,
-  loading: false,   
+  loading: false,
 
   query: '',
   registrationType: [],
   paidStatus: [],
-  registeredDate: '',
+  fromDate: '',
+  toDate: '',
   sortDirection: 'ascending',
   currentPage: 1,
   itemsPerPage: 5,
 
   setQuery: (value) => set({ query: value, currentPage: 1 }),
-  setRegistrationType: (value) => set({ registrationType: value, currentPage: 1 }),
-  setPaidStatus: (value) => set({ paidStatus: value, currentPage: 1 }),
-  setRegisteredDate: (value) => set({ registeredDate: value, currentPage: 1 }),
+  setRegistrationType: (value) => set({ registrationType: Array.isArray(value) ? value : [value], currentPage: 1 }),
+  setPaidStatus: (value) => set({ paidStatus: Array.isArray(value) ? value : [value], currentPage: 1 }),
+  setFromDate: (value) => set({ fromDate: value, currentPage: 1 }),
+  setToDate: (value) => set({ toDate: value, currentPage: 1 }),
   setSortDirection: () =>
     set((state) => ({
       sortDirection: state.sortDirection === 'ascending' ? 'descending' : 'ascending',
       currentPage: 1,
     })),
+
   setPage: (page) => set({ currentPage: page }),
   clearAll: () =>
     set({
       query: '',
       registrationType: [],
       paidStatus: [],
-      registeredDate: '',
+      fromDate: '',
+      toDate: '',
       currentPage: 1,
     }),
 
@@ -38,24 +42,35 @@ export const useAttendeeStore = create((set, get) => ({
     set({ loading: true });
 
     try {
-      const data = await getAttendeeList({
+      const params = {
         search: state.query,
         registration_type: state.registrationType,
         is_paid: state.paidStatus,
+        from_date: state.fromDate,
+        to_date: state.toDate,
         page: state.currentPage,
-        from_date: state.registeredDate,
-        to_date: state.registeredDate,
         limit: state.itemsPerPage,
         sort: 'name',
         direction: state.sortDirection === 'ascending' ? 'asc' : 'desc',
+      };
+
+      // Remove empty or undefined parameters
+      Object.keys(params).forEach((key) => {
+        if (params[key] === '' || (Array.isArray(params[key]) && params[key].length === 0) || params[key] == null) {
+          delete params[key];
+        }
       });
-      console.log('data', data);
+
+      console.log('Query Params:', params); // Debug query parameters
+      const data = await getAttendeeList(params);
+      console.log('API Response:', data);
       set({
         attendees: data.attendees || [],
         totalAttendees: data.total || 0,
       });
     } catch (err) {
       console.error('Error loading attendees:', err);
+      set({ attendees: [], totalAttendees: 0 }); // Reset on error
     } finally {
       set({ loading: false });
     }

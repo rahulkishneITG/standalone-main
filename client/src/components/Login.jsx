@@ -1,150 +1,135 @@
-import { useState, useCallback, useContext,useEffect } from 'react';
+import { useState, useCallback, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Page,
-    Card,
-    TextField,
-    Button,
-    FormLayout,
-    Text,
-    Checkbox,
-    LegacyStack
+  Page,
+  Card,
+  TextField,
+  Button,
+  FormLayout,
+  Text,
+  Checkbox,
+  LegacyStack,
 } from '@shopify/polaris';
-import style from "../styles/login.module.css";
 import toast from 'react-hot-toast';
+import style from '../styles/login.module.css';
 import { AuthContext } from '../context/AuthContext';
 
 const Login = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [checked, setChecked] = useState(false);
-    const [emailError, setEmailError] = useState('');
-    const [passwordError, setPasswordError] = useState('');
-    const { login } = useContext(AuthContext);
-    const navigate = useNavigate();
+  const [form, setForm] = useState({ email: '', password: '' });
+  const [errors, setErrors] = useState({ email: '', password: '' });
+  const [rememberMe, setRememberMe] = useState(false);
+  const { login } = useContext(AuthContext);
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            navigate('/');
+  // Redirect if already logged in
+  useEffect(() => {
+    if (localStorage.getItem('token')) {
+      navigate('/');
+    }
+  }, [navigate]);
+
+  const validateEmail = (email) => {
+    if (!email) return 'Email is required';
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email) ? '' : 'Please enter a valid email address';
+  };
+
+  const validatePassword = (password) => {
+    if (!password) return 'Password is required';
+    return password.length >= 6 ? '' : 'Password must be at least 6 characters long';
+  };
+
+  const handleInputChange = useCallback((field) => (value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({
+      ...prev,
+      [field]: field === 'email' ? validateEmail(value) : validatePassword(value),
+    }));
+  }, []);
+
+  const handleLogin = useCallback(
+    async (e) => {
+      e.preventDefault();
+
+      const emailErr = validateEmail(form.email);
+      const passErr = validatePassword(form.password);
+      setErrors({ email: emailErr, password: passErr });
+
+      if (!emailErr && !passErr) {
+        try {
+          await login(form.email, form.password, rememberMe);
+          toast.success('Login successful!');
+          setTimeout(() => navigate('/'), 1500);
+        } catch (error) {
+          toast.error('Login failed. Please try again.');
         }
-    },[navigate]);
+      }
+    },
+    [form, rememberMe, login, navigate]
+  );
 
-    const validateEmail = (value) => {
-        if (!value) {
-            return 'Email is required';
-        }
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(value)) {
-            return 'Please enter a valid email address';
-        }
-        return '';
-    };
+  return (
+    <div className={style.mainLoginContainer}>
+      <Page narrowWidth>
+        <LegacyStack vertical alignment="center">
+          <div className={style.mainHeading}>
+            <Text variant="heading2xl" as="h3">
+              Standalone
+            </Text>
+          </div>
+        </LegacyStack>
 
-    const validatePassword = (value) => {
-        if (!value) {
-            return 'Password is required';
-        }
-        if (value.length < 6) {
-            return 'Password must be at least 6 characters long';
-        }
-        return '';
-    };
-
-    const handleLogin = useCallback(async (e) => {
-        e.preventDefault();
-
-        const emailValidationError = validateEmail(email);
-        const passwordValidationError = validatePassword(password);
-
-        setEmailError(emailValidationError);
-        setPasswordError(passwordValidationError);
-
-        if (!emailValidationError && !passwordValidationError) {
-            try {
-                await login(email, password, checked);
-                toast.success('Login successful!');
-                setTimeout(() => {
-                    navigate('/');
-                }, 2000);
-            } catch (error) {
-                toast.error('Login failed. Please try again.');
-            }
-        }
-    }, [email, password, navigate]);
-
-    const handleChange = useCallback(
-        (newChecked) => setChecked(newChecked),
-        [],
-    );
-
-    const handleEmailChange = useCallback((value) => {
-        setEmail(value);
-        setEmailError(validateEmail(value));
-    }, []);
-
-    const handlePasswordChange = useCallback((value) => {
-        setPassword(value);
-        setPasswordError(validatePassword(value));
-    }, []);
-
-    return (
-        <div className={style.mainLoginContainer}>
-            <Page narrowWidth>
-                <LegacyStack vertical alignment="center">
-                    <div className={style.mainHeading}>
-                        <Text variant="heading2xl" as="h3">
-                            Standalone
-                        </Text>
-                    </div>
-                </LegacyStack>
-                <div className={style.loginCard}>
-                    <Card sectioned>
-                        <form onSubmit={handleLogin}>
-                            <LegacyStack vertical>
-                                <div className={style.loginCardheader}>
-                                    <Text variant="headingLg" as="h5" alignment="center">
-                                        Login
-                                    </Text>
-                                    <Text variant="bodyMd" as="p" alignment="center">
-                                        Enter your credentials to continue
-                                    </Text>
-                                </div>
-                            </LegacyStack>
-
-                            <FormLayout alignment="center">
-                                <TextField
-                                    type="email"
-                                    value={email}
-                                    onChange={handleEmailChange}
-                                    autoComplete="email"
-                                    placeholder='Email Address'
-                                    error={emailError}
-                                />
-
-                                <TextField
-                                    type="password"
-                                    value={password}
-                                    onChange={handlePasswordChange}
-                                    autoComplete="current-password"
-                                    placeholder='Password'
-                                    error={passwordError}
-                                />
-                                <Checkbox
-                                    label="Remember Me"
-                                    checked={checked}
-                                    onChange={handleChange}
-                                />
-                                <div className={style.signInBtn}>
-                                    <Button variant="primary" submit>Sign In</Button>
-                                </div>
-                            </FormLayout>
-                        </form>
-                    </Card>
+        <div className={style.loginCard}>
+          <Card sectioned>
+            <form onSubmit={handleLogin}>
+              <LegacyStack vertical>
+                <div className={style.loginCardheader}>
+                  <Text variant="headingLg" as="h5" alignment="center">
+                    Login
+                  </Text>
+                  <Text variant="bodyMd" as="p" alignment="center">
+                    Enter your credentials to continue
+                  </Text>
                 </div>
-            </Page>
+              </LegacyStack>
+
+              <FormLayout>
+                <TextField
+                  type="email"
+                  value={form.email}
+                  onChange={handleInputChange('email')}
+                  autoComplete="email"
+                  placeholder="Email Address"
+                  error={errors.email}
+                />
+
+                <TextField
+                  type="password"
+                  value={form.password}
+                  onChange={handleInputChange('password')}
+                  autoComplete="current-password"
+                  placeholder="Password"
+                  error={errors.password}
+                />
+
+                <Checkbox
+                  label="Remember Me"
+                  checked={rememberMe}
+                  onChange={setRememberMe}
+                />
+
+                <div className={style.signInBtn}>
+                  <Button variant="primary" submit>
+                    Sign In
+                  </Button>
+                </div>
+              </FormLayout>
+            </form>
+          </Card>
         </div>
-    );
+      </Page>
+    </div>
+  );
 };
 
 export default Login;

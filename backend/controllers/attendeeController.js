@@ -4,7 +4,6 @@ const { createAttendeeService } = require('../services/attendee.services');
 
 exports.getAttendeeList = async (req, res) => {
   try {
-    console.log(">>> Incoming queryParams:", req.query);
     const data = await attendeeService.getAttendeeList(req.query);
     console.log('data', data);
     res.json(data);
@@ -13,9 +12,6 @@ exports.getAttendeeList = async (req, res) => {
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
-
-
-
 
 exports.createAttendee = async (req, res) => {
   try {

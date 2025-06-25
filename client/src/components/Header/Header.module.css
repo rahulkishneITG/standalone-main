@@ -44,6 +44,11 @@
 .sidebarToggle{
   display: none;
 }
+.headerBottomTitle{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 @media screen and (max-width: 990px) {  
   .headerAvatar{
     justify-content: space-between;
