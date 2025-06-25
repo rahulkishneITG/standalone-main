@@ -23,9 +23,9 @@ app.use(cors());
  
 // Connect to DB
 connectDB();      
-seeder(); 
-eventseeder();
-groupregistre();
+// seeder(); 
+// eventseeder();
+// groupregistre();
  
 // Routes
 app.use("/api", routes);

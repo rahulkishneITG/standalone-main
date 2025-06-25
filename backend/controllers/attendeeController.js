@@ -1,10 +1,10 @@
-const attendeeService = require('../services/attendeeService.js');
-const { createAttendeeService } = require('../services/attendee.service');
+const { getAttendeeList, createAttendeeService } = require('../services/attendeeService.js');
+// const { createAttendeeService } = require('../services/attendee.service');
 
 
 exports.getAttendeeList = async (req, res) => {
   try {
-    const data = await attendeeService.getAttendeeList(req.query);
+    const data = await getAttendeeList(req.query);
     console.log('data', data);
     res.json(data);
   } catch (error) {
