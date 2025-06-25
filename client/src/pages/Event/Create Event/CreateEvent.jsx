@@ -1,18 +1,14 @@
-import React from 'react'
-import styles from './CreateEvent.module.css'
+import { Page,Layout } from '@shopify/polaris';
+import CreateEventForm from '../../../components/Main Content/CreateEvent/CreateEventForm';
+
 
 const CreateEvent = () => {
   return (
-    <div className={styles.createEvent}>
-        <h1>Create Event</h1>   
-        <form> 
-            <div className={styles.formGroup}>
-                <label htmlFor="eventName">Event Name</label>
-                <input type="text" id="eventName" name="eventName" />
-            </div>
-        </form>
-    </div>
-  )
-}
-
-export default CreateEvent
+    <Page>
+      <Layout >
+        <CreateEventForm />
+      </Layout>
+    </Page>
+  );
+};
+export default CreateEvent;

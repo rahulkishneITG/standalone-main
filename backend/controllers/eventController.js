@@ -61,31 +61,32 @@ exports.getEventCount = async (req, res) => {
     }
 };
 
-exports.deletedEvet = async (req, res) => {
-    const { delId } = req.body;
+exports.deletedEvent = async (req, res) => {
+    const { delId } = req.params;
+    console.log("Deleting event with ID:", delId);
 
     if (!delId || typeof delId !== 'string') {
         return res.status(400).json({ error: "Invalid or missing delId." });
     }
 
     try {
-
         const result = await Events.findByIdAndDelete(delId);
-
         if (!result) {
-            return res.status(404).json({ message: "Record not found" });
+            return res.status(404).json({ message: "Event not found" });
         }
 
-        res.status(200).json({ message: "Deleted successfully", deleted: result });
+        return res.status(200).json({ message: "Deleted successfully", deleted: result });
     } catch (error) {
         console.error("Error deleting document:", error);
-        res.status(500).json({ error: "Internal server error" });
+        return res.status(500).json({ error: "Internal server error" });
     }
 };
 
+
 exports.editEvent = async (req, res) => {
     try {
-        const { editId } = req.body;
+        const { editId } = req.params;
+        console.log(editId);
 
         if (!editId || typeof editId !== 'string') {
             return res.status(400).json({ error: 'Invalid or missing editId.' });

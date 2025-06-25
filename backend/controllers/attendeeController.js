@@ -1,5 +1,5 @@
 const attendeeService = require('../services/attendeeService.js');
-const { createAttendeeService } = require('../services/attendee.service');
+const { createAttendeeService } = require('../services/attendee.services');
 
 
 exports.getAttendeeList = async (req, res) => {
@@ -12,9 +12,6 @@ exports.getAttendeeList = async (req, res) => {
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
-
-
-
 
 exports.createAttendee = async (req, res) => {
   try {

@@ -1,18 +1,18 @@
-// seed/seed.js
+
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const Groupmember = require('../models/groupmember.model.js');
 const Attendee = require('../models/attendee.model.js');
-const { createAttendeeService } = require('../services/attendee.service');
+const { createAttendeeService } = require('../services/attendee.services.js');  
 
 dotenv.config();
 
 const eventData = async () => {
     try {
-        const event_id = '65abcde123456789abcdef12'; // ✅ Replace with your actual event _id
+        const event_id = '65abcde123456789abcdef12';
 
         const payloads = [
-            // 🔹 Individual Attendees
+    
             {
                 main_guest: {
                     first_name: 'Amit',
@@ -20,8 +20,8 @@ const eventData = async () => {
                     email: 'amit.sharma@example.com'
                 },
                 event_id,
-                registration_type: 'general',
-                registration_as: 'individual',
+                registration_type: 'individual',
+                registration_as: 'pre',
                 is_paid: 'yes',
                 amount_paid: 150,
                 source: 'website',
@@ -35,16 +35,14 @@ const eventData = async () => {
                     email: 'sneha.kumar@example.com'
                 },
                 event_id,
-                registration_type: 'general',
-                registration_as: 'individual',
+                registration_type: 'individual',
+                registration_as: 'pre',
                 is_paid: 'no',
                 amount_paid: 0,
                 source: 'app',
                 shopify_order_id: '',
                 shopify_product_id: ''
             },
-
-            // 🔹 Group Attendees
             {
                 main_guest: {
                     first_name: 'Neha',
@@ -52,8 +50,8 @@ const eventData = async () => {
                     email: 'neha.verma@example.com'
                 },
                 event_id,
-                registration_type: 'vip',
-                registration_as: 'group',
+                registration_type: 'group',
+                registration_as: 'walh-in',
                 is_paid: 'yes',
                 amount_paid: 500,
                 source: 'referral',
@@ -81,8 +79,8 @@ const eventData = async () => {
                     email: 'manish.jain@example.com'
                 },
                 event_id,
-                registration_type: 'vip',
-                registration_as: 'group',
+                registration_type: 'individual',
+                registration_as: 'pre',
                 is_paid: 'yes',
                 amount_paid: 600,
                 source: 'instagram',
@@ -110,8 +108,8 @@ const eventData = async () => {
                     email: 'ritika.desai@example.com'
                 },
                 event_id,
-                registration_type: 'vip',
-                registration_as: 'group',
+                registration_type: 'group',
+                registration_as: 'walk-in',
                 is_paid: 'no',
                 amount_paid: 0,
                 source: 'linkedin',
@@ -136,13 +134,13 @@ const eventData = async () => {
 
         for (const payload of payloads) {
             const result = await createAttendeeService(payload);
-            console.log('✅ Seeded:', result.message);
+            console.log('Seeded:', result.message);
         }
 
         console.log('\n🎉 All 5 attendees inserted successfully!');
         process.exit(0);
     } catch (err) {
-        console.error('❌ Seeder error:', err.message);
+        console.error('Seeder error:', err.message);
         process.exit(1);
     }
 };

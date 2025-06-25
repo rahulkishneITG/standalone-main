@@ -37,7 +37,10 @@ const Sidebar = () => {
           <Link
             key={item.path}
             to={item.path}
-            className={`${styles.navItem} ${location.pathname === item.path ? styles.active : ''}`}
+            className={`${styles.navItem} ${item.path === '/'
+                ? location.pathname === '/' ? styles.active : ''
+                : location.pathname.startsWith(item.path) ? styles.active : ''
+              }`}
           >
             <span className={styles.icon}>
               <Icon source={item.icon} tone="base" />

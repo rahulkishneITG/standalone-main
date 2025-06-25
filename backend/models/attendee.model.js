@@ -5,6 +5,7 @@ const attendeeSchema = new mongoose.Schema({
   event_id: { type: String },
   first_name: { type: String },
   last_name: { type: String },
+  name: { type: String},
   email: { type: String },
   group_first_name: { type: String },
   group_last_name: { type: String },
