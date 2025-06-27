@@ -1,16 +1,20 @@
 import React, { useContext } from 'react';
 import { Avatar, Text, Button, Icon } from '@shopify/polaris';
 import styles from './Header.module.css';
-import { MenuIcon } from '@shopify/polaris-icons';
+import { ArrowLeftIcon, MenuIcon } from '@shopify/polaris-icons';
 import useSidebarStore from '../../store/sidebarStore';
 import { AuthContext } from '../../context/AuthContext';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import FullPageLoader from '../Loader';
+import { exportToCSV } from '../../utils/exportCsv.js';
+import { useAttendeeStore } from '../../store/attendeeStore';
 
 const Header = () => {
   const { toggleSidebar } = useSidebarStore();
   const { user, loading } = useContext(AuthContext);
   const location = useLocation();
+  const { attendees } = useAttendeeStore();
+  const navigate = useNavigate();
 
   if (loading) {
     return <FullPageLoader />;
@@ -30,15 +34,15 @@ const Header = () => {
 
   const getPageActions = () => {
     const path = location.pathname;
-    if (path === '/'){
+    if (path === '/') {
       return (
         <>
           <Link to="/event/create">
-              <Button variant="primary" tone="primary">Create Event</Button>
-            </Link>
-            <Link to="/attendee">
-              <Button variant="primary" tone="primary">View Attendee List</Button>
-            </Link>
+            <Button variant="primary" tone="primary">Create Event</Button>
+          </Link>
+          <Link to="/attendee">
+            <Button variant="primary" tone="primary">View Attendee List</Button>
+          </Link>
         </>
       );
     }
@@ -57,8 +61,8 @@ const Header = () => {
     if (path.startsWith('/attendee')) {
       return (
         <>
-          <Link to="/attendee/export">
-            <Button variant="primary" tone="primary">Export as CSV</Button>
+          <Link to="/attendee">
+            <Button onClick={() => exportToCSV(attendees, 'attendees.csv')} variant="primary" tone="primary">Export as CSV</Button>
           </Link>
           <Link to="/attendee/import">
             <Button variant="primary" tone="primary">Bulk import attendees</Button>
@@ -88,7 +92,14 @@ const Header = () => {
         </div>
         <div className={styles.headerBottom}>
           <Text variant="headingLg" as="h2" fontWeight="semibold">
-            {getPageTitle()}
+            <div className={styles.headerBottomTitle}>
+              {(location.pathname.startsWith('/event/create') || location.pathname.startsWith('/event/edit')) && (
+                <div className={styles.backButton} onClick={() => navigate('/event')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Icon source={ArrowLeftIcon} tone="base" />
+                </div>
+              )}
+              {getPageTitle()}
+            </div>
           </Text>
           <div className={styles.headerBottomButtons}>
             {getPageActions()}

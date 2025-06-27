@@ -17,7 +17,7 @@ const Sidebar = () => {
     { path: '/event', label: 'Events', icon: CalendarIcon },
     { path: '/attendee', label: 'Attendees', icon: PersonIcon },
     { path: '/email', label: 'Emails', icon: EmailIcon },
-    { path: '/walk-in', label: 'Walk-ins', icon: ProductIcon },
+    { path: '/walkin', label: 'Walk-ins', icon: ProductIcon },
   ];
 
   const bottomNavItems = [
@@ -37,7 +37,10 @@ const Sidebar = () => {
           <Link
             key={item.path}
             to={item.path}
-            className={`${styles.navItem} ${location.pathname === item.path ? styles.active : ''}`}
+            className={`${styles.navItem} ${item.path === '/'
+                ? location.pathname === '/' ? styles.active : ''
+                : location.pathname.startsWith(item.path) ? styles.active : ''
+              }`}
           >
             <span className={styles.icon}>
               <Icon source={item.icon} tone="base" />

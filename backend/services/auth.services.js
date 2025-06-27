@@ -1,7 +1,7 @@
 const User = require('../models/user.model.js');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-
+const bcrypt = require('bcryptjs');
 
 exports.getUserForLogin = async (email, password, rememberMe) => {
   if (!email || !password) {
@@ -36,6 +36,7 @@ exports.generateToken = async (user, rememberMe) => {
 
 
 exports.ismatchPassword = async (password, user) => {   
+    console.log( await user.matchPassword(password));
     try {
         if (!user || !user.password) {
             throw new Error('User or password not found');
@@ -55,5 +56,3 @@ exports.getUser = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
-
-

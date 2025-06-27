@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
 const http = require('http');
 const app = express();
@@ -18,14 +19,21 @@ dotenv.config();
 // Setup middlewares
 app.use(express.json());
 app.use(bodyParser.json());
+app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000', 
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
  
 // Connect to DB
 connectDB();      
-seeder(); 
-eventseeder();
-groupregistre();
+// seeder(); 
+// eventseeder();
+// groupregistre();
  
 // Routes
 app.use("/api", routes);

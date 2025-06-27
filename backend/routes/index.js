@@ -7,12 +7,18 @@ const eventRoutes = require('./event.route.js');
 const groupRoute = require('./group.route.js'); 
 const webhookRoute = require('./webhook.route.js'); 
 const attendeesRoute = require('./attendees.route.js');
+const userRoute = require('./user.route.js');
+const walkRoute = require('./walkin.route.js');
 
 router.use("/auth", authRoutes);
+
+router.use("/user",userRoute)
 
 router.use("/event", eventRoutes);
 
 router.use("/group", groupRoute);
+
+router.use("/walkin", walkRoute);
 
 router.use("/attendees", attendeesRoute);
 

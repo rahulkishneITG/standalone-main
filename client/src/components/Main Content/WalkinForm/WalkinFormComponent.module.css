@@ -1,0 +1,13 @@
+.form {
+    max-width: "max-content"
+  }
+  .heading {
+    padding-bottom: 10px;
+  }
+  .additionButton{
+    padding-top: 10px;
+  }
+  .hidden{
+    opacity: 0;
+    visibility: hidden;
+  }
