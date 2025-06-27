@@ -1,6 +1,7 @@
 import { TextField, Button, FormLayout, InlineStack, Text, Spinner } from '@shopify/polaris';
-import { useState } from 'react';
-import useUserSettingsStore from '../../../store/userSettingsStore';
+import { useEffect, useState } from 'react';
+import {useUserProfileStore, useUserSettingsStore} from '../../../store/userSettingsStore';
+import toast from 'react-hot-toast';
 
 export default function PasswordChanger() {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -14,10 +15,28 @@ export default function PasswordChanger() {
       setPasswordMessage('New password and confirm password do not match.');
       return;
     }
-
     await updatePassword({ currentPassword, newPassword });
+    
   };
 
+ 
+  useEffect(() => {
+    if (passwordMessage) {
+      if (passwordMessage.toLowerCase().includes('success')) {
+        toast.success(passwordMessage);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        toast.error(passwordMessage);
+      }
+      const timer = setTimeout(() => {
+        setPasswordMessage(''); // message ko hata do 3 sec baad
+      }, 3000); // 3 seconds
+  
+      return () => clearTimeout(timer);
+    }
+  }, [passwordMessage]);
   return (
     <FormLayout>
       <TextField

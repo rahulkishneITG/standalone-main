@@ -1,29 +1,78 @@
-import { useState, useEffect } from 'react';
-import { Autocomplete, TextField } from '@shopify/polaris';
-import { searchProducts } from '../../../api/ProductApi.js';
-import useEventStore from '../../../store/CreateEventStore.js';
+import { Autocomplete, Icon, Spinner, Text } from '@shopify/polaris';
+import { SearchIcon } from '@shopify/polaris-icons';
+import { useState, useCallback, useEffect } from 'react';
+import useProductStore from '../../../store/productStore.js';
 
-const ProductSearch = () => {
-    const [input, setInput] = useState('');
-    const [options, setOptions] = useState([]);
-    const { eventData, setField } = useEventStore();
-  
-    useEffect(() => {
-      const fetch = async () => {
-        const res = await searchProducts(input);
-        setOptions(res.map((p) => ({ value: p.id, label: p.title })));
-      };
-      if (input) fetch();
-    }, [input]);
-  
-    return (
+export default function ProductSearch({error}) {
+  const [inputValue, setInputValue] = useState('');
+  const [selectedOptions, setSelectedOptions] = useState([]);
+
+  const {
+    searchResults,
+    searchProducts,
+    loading,
+    setSelectedProduct,
+  } = useProductStore();
+
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      if (inputValue.length >= 2) {
+        searchProducts(inputValue);
+      }
+    }, 300);
+
+    return () => clearTimeout(delay);
+  }, [inputValue]);
+
+  const updateText = useCallback((value) => {
+    setInputValue(value);
+  }, []);
+
+  const updateSelection = useCallback(
+    (selected) => {
+      setSelectedOptions(selected);
+      const selectedValue = searchResults.find((option) => option.value === selected[0]);
+      if (selectedValue) {
+        setInputValue(selectedValue.label);
+        setSelectedProduct(selectedValue);
+      }
+    },
+    [searchResults]
+  );
+
+  const textField = (
+    <Autocomplete.TextField
+      onChange={updateText}
+      value={inputValue}
+      prefix={loading ? <Spinner size="small" /> : <Icon source={SearchIcon} tone="base" />}
+      placeholder="Search by name or SKU"
+      autoComplete="off"
+      name='Product is required'
+      error={error}
+    />
+  );
+
+  const optionsSection = [
+    {
+      options: searchResults,
+    },
+  ];
+
+  return (
+    <div style={{ height: 'auto' }}>
       <Autocomplete
-        options={options}
-        selected={eventData.product ? [eventData.product] : []}
-        onSelect={([selected]) => setField('product', selected)}
-        textField={<TextField label="Search Product" value={input} onChange={setInput} autoComplete="off" />}
+        options={optionsSection}
+        selected={selectedOptions}
+        onSelect={updateSelection}
+        textField={textField}
+        listTitle="Matching Products"
+        loading={loading}
       />
-    );
-  };
-  
-  export default ProductSearch;
+      {error && (
+        <Text variant="bodySm" color="critical">
+          {error}
+        </Text>
+      )}
+    </div>
+  );
+}

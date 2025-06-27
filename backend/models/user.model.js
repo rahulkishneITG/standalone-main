@@ -6,7 +6,11 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   name: { type: String, required: true },
   resetPasswordToken: String,
-  resetPasswordExpires: Date, 
+  resetPasswordExpires: Date,
+  image: {
+    data: Buffer,
+    contentType: String,
+  },
 });
 
 userSchema.pre('save', async function (next) {

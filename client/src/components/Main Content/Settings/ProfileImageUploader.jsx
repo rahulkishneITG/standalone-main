@@ -1,30 +1,31 @@
+import { DropZone, Thumbnail } from '@shopify/polaris';
+import { useState, useCallback } from 'react';
 
-import { DropZone, Thumbnail, Text } from '@shopify/polaris';
-import { useState } from 'react';
+export default function ProfileImageUploader({ setImageUrl, setFile }) {
+  const [filePreview, setFilePreview] = useState(null);
 
-export default function ProfileImageUploader({ setImageUrl }) {
-  const [file, setFile] = useState();
-
-  const handleDrop = async (_dropFiles, acceptedFiles) => {
+  const handleDrop = useCallback((_dropFiles, acceptedFiles) => {
     const uploadedFile = acceptedFiles[0];
-    setFile(uploadedFile);
+    if (!uploadedFile) return;
 
-    // upload logic here or mock:
-    const url = URL.createObjectURL(uploadedFile); // for preview
-    setImageUrl(url);
-
-    // API call here to upload
-    // await uploadImageToServer(uploadedFile)
-  };
-
-  const validImageTypes = ['image/jpeg', 'image/png'];
+    setFile(uploadedFile); // Pass image file to parent
+    const previewUrl = URL.createObjectURL(uploadedFile);
+    setFilePreview(previewUrl); // Local preview inside DropZone
+    setImageUrl(previewUrl); // Show in Avatar above
+  }, [setFile, setImageUrl]);
 
   return (
-    <DropZone accept={validImageTypes} type="image" onDrop={handleDrop}>
-      {file ? (
-        <DropZone.FileUpload actionHint="Uploaded image shown above" />
-      ) : (
-        <DropZone.FileUpload actionTitle="Upload profile image" />
+    <DropZone
+      accept={['image/jpeg', 'image/png', 'image/svg+xml']}
+      type="image"
+      allowMultiple={false}
+      onDrop={handleDrop}
+    >
+      <DropZone.FileUpload actionTitle="Upload profile image" />
+      {filePreview && (
+        <div style={{ marginTop: '1rem' }}>
+          <Thumbnail source={filePreview} alt="Uploaded image preview" size="large" />
+        </div>
       )}
     </DropZone>
   );

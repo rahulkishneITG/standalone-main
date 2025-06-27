@@ -19,6 +19,9 @@ import EditEvent from './pages/Event/Edit Event/EditEvent';
 import EventList from './pages/Event/EventList/EventList';
 import { PageNotFound } from './pages/404Page/PageNotFound';
 import SettingsPage from './pages/Settings/SettingsPage';
+import Walkin from './pages/Walkin/Walkin';
+import WalkinForm from './pages/Walkin/WalkinForm/WalkinForm';
+import WalkinList from './pages/Walkin/WalkinList/WalkinList';
 
 function AppWrapper() {
   const { loading } = useLoader();
@@ -60,6 +63,11 @@ function AppWrapper() {
                   </Route> 
                   <Route path="attendee" element={<Attendee />} />  
                   <Route path="settings" element={<SettingsPage />} /> 
+                  <Route path="walkin" element={<Walkin />}>
+                    <Route index element={<WalkinList />} />
+                    <Route path="walkin-form/:id" element={<WalkinForm />} />
+                    <Route path="edit/:id" element={<EditEvent />} />
+                  </Route> 
                 </Route>
                 <Route path="*" element={<PageNotFound />} />
               </Routes>
