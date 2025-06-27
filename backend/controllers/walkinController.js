@@ -11,3 +11,9 @@ exports.walkinList = async (req, res) => {
         res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
 };
+
+
+exports.walkInData = async (req,res) => {
+    const walkinID = req.param;
+    console.log('walkinId',walkinID);
+}

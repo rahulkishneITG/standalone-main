@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
 const http = require('http');
 const app = express();
@@ -18,6 +19,7 @@ dotenv.config();
 // Setup middlewares
 app.use(express.json());
 app.use(bodyParser.json());
+app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors());
  

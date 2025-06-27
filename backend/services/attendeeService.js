@@ -1,269 +1,229 @@
 const Attendee = require('../models/attendee.model.js');
+const { buildFilters } = require('../utils/attendeeFilter.js');
+const normalizeQueryParams = require('../utils/normalizeQuery.js');
 const EventGroup = require('../models/groupmember.model.js');
+const Walk_in = require('../models/walk_in.model.js');
 
-
+const buildAttendeeData = (data) => ({
+  _id: data._id || null,
+  name: data.name,
+  email: data.email,
+  registration_type: data.registration_type,
+  shopify_order_id: data.shopify_order_id,
+  shopify_product_id: data.shopify_product_id,
+  is_paid: data.is_paid,
+  amount_paid: data.amount_paid,
+  registered_at: data.registered_at,
+  group_id: data.group_id || '',
+  isGroupLeader: data.isGroupLeader || false,
+  hasGroupLeader: data.hasGroupLeader || false,
+  groupLeaderId: data.groupLeaderId || null,
+  groupLeaderName: data.groupLeaderName || null,
+});
 
 const getAttendeeList = async (queryParams = {}) => {
   const {
-    search = '',
-    event_id,
-    registration_type,
-    is_paid,
-    from_date,
-    to_date
+    page = 1,
+    limit = 10,
+    sort = 'name',
+    direction = 'asc',
   } = queryParams;
 
-  const filters = [];
+  const normalizedParams = normalizeQueryParams(queryParams);
 
-  if (search) {
-    filters.push({
-      $or: [
-        { name: new RegExp(search, 'i') },
-        { email: new RegExp(search, 'i') }
-      ]
-    });
-  }
-
-  if (event_id && mongoose.Types.ObjectId.isValid(event_id)) {
-    filters.push({ event_id });
-  }
+  const mongoQuery = buildFilters(normalizedParams);
 
 
-  if (registration_type) {
-    filters.push({ registration_type });
-  }
+  const safeLimit = Math.max(1, parseInt(limit));
+  const safePage = Math.max(1, parseInt(page));
+  const skip = (safePage - 1) * safeLimit;
 
+  const sortBy = { [sort]: direction === 'asc' ? 1 : -1 };
+  const rawAttendees = await Attendee.find(mongoQuery)
+    .sort(sortBy)
+    .skip(skip)
+    .limit(safeLimit)
+    .lean();
 
-  if (is_paid === 'true' || is_paid === 'false') {
-    filters.push({ is_paid: is_paid === 'true' });
-  }
+  const attendeeMap = Object.fromEntries(rawAttendees.map((a) => [a._id.toString(), a]));
+  let flatList = [];
 
-
-  if (from_date || to_date) {
-    const dateFilter = {};
-    if (from_date) {
-      dateFilter.$gte = new Date(from_date);
-    }
-    if (to_date) {
-      dateFilter.$lte = new Date(to_date);
-    }
-    filters.push({ registered_at: dateFilter });
-  }
-
-
-  const query = filters.length ? { $and: filters } : {};
-
-
-  const allAttendees = await Attendee.find(query);
-  const attendeeMap = Object.fromEntries(
-    allAttendees.map(att => [att._id.toString(), att])
-  );
-
-  const buildAttendeeData = ({
-    _id,
-    name,
-    email,
-    registration_type,
-    shopify_order_id,
-    shopify_product_id,
-    is_paid,
-    amount_paid,
-    registered_at,
-    group_id = '',
-    isGroupLeader = false,
-    hasGroupLeader = false,
-    groupLeaderId = null,
-    groupLeaderName = null
-  }) => ({
-    _id,
-    name,
-    email,
-    registration_type,
-    shopify_order_id,
-    shopify_product_id,
-    is_paid,
-    amount_paid,
-    registered_at,
-    group_id,
-    isGroupLeader,
-    hasGroupLeader,
-    groupLeaderId,
-    groupLeaderName
-  });
-
-  const result = [];
-
-  for (const attendee of allAttendees) {
+  for (const attendee of rawAttendees) {
     const attendeeId = attendee._id.toString();
-
- 
+    const base = { ...attendee };
     if (Array.isArray(attendee.group_member_details) && attendee.group_member_details.length > 0) {
 
-      result.push(buildAttendeeData({
-        ...attendee._doc,
-        isGroupLeader: true
-      }));
+      flatList.push(buildAttendeeData({ ...base, isGroupLeader: true }));
 
-
-      for (const member of attendee.group_member_details) {
-        result.push(buildAttendeeData({
+      attendee.group_member_details.forEach((member) => {
+        if (mongoQuery.registration_type && !mongoQuery.registration_type.$in.includes(base.registration_type)) {
+          return;
+        }
+        flatList.push(buildAttendeeData({
+          ...base,
           _id: null,
           name: member.name,
           email: member.email,
-          registration_type: attendee.registration_type,
-          shopify_order_id: attendee.shopify_order_id,
-          shopify_product_id: attendee.shopify_product_id,
-          is_paid: attendee.is_paid,
-          amount_paid: attendee.amount_paid,
-          registered_at: attendee.registered_at,
-          group_id: attendeeId,
+          registration_type: base.registration_type,
           isGroupLeader: false,
           hasGroupLeader: true,
+          group_id: attendeeId,
           groupLeaderId: attendeeId,
-          groupLeaderName: attendee.name
+          groupLeaderName: attendee.name,
+        }));
+      });
+    } else if (attendee.group_id && attendee.group_id !== '') {
+      const leader = attendeeMap[attendee.group_id];
+      if (!mongoQuery.registration_type || mongoQuery.registration_type.$in.includes(base.registration_type)) {
+        flatList.push(buildAttendeeData({
+          ...base,
+          isGroupLeader: false,
+          hasGroupLeader: true,
+          groupLeaderId: leader?._id || null,
+          groupLeaderName: leader?.name || null,
         }));
       }
-    }
-    
-    else if (attendee.group_id && attendee.group_id !== '') {
-      const leader = attendeeMap[attendee.group_id];
-      result.push(buildAttendeeData({
-        ...attendee._doc,
-        isGroupLeader: false,
-        hasGroupLeader: true,
-        groupLeaderId: leader ? leader._id : null,
-        groupLeaderName: leader ? leader.name : null
-      }));
-    }
-
-    else {
-      result.push(buildAttendeeData({
-        ...attendee._doc,
-        isGroupLeader: false
-      }));
+    } else {
+      if (!mongoQuery.registration_type || mongoQuery.registration_type.$in.includes(base.registration_type)) {
+        flatList.push(buildAttendeeData({ ...base, isGroupLeader: false }));
+      }
     }
   }
+  const total = await Attendee.countDocuments(mongoQuery);
 
   return {
-    total: result.length,
-    attendees: result
+    total,
+    attendees: flatList,
   };
 };
 
 const createAttendeeService = async (data) => {
-  // Step 1: Validate main guest
-  if (!data.main_guest?.first_name || !data.main_guest?.last_name || !data.main_guest?.email) {
-    throw new Error('Main guest details are incomplete.');
-  }
+  try {
+    const additionalGuestsLength = data?.additional_guests?.length || 0;
+    let savedEventGroup = null;
+    let type = 'Individual';
 
-  const hasGroupMembers = Array.isArray(data.additional_guests) && data.additional_guests.length > 0;
+    // const event_id = data.event_id;
+    const event_id = "685d0d498038b810c2739105";
 
-  // Common fields
-  const event_id = data.event_id || 'default_event';
-  const registration_type = data.registration_type || 'general';
-  const registration_as = data.registration_as || 'individual';
-  const is_paid = data.is_paid || 'no';
-  const amount_paid = parseFloat(data.amount_paid) || 0.00;
-  const source = data.source || '';
-  const shopify_order_id = data.shopify_order_id || '';
-  const shopify_product_id = data.shopify_product_id || '';
+    const countWalkInAttendees = async () => {
+      try {
+        if (!event_id) {
+          throw new Error('Event ID is required');
+        }
+        const walkInCount = await Attendee.countDocuments({
+          event_id: event_id,
+          registration_as: "walk-in"
+        });
 
-  let savedGroup = null;
-  let groupMemberIds = [];
+        const walkInRecord = await Walk_in.findOne({ event_id: event_id });
+        if (!walkInRecord) {
+          throw new Error(`Walk-in capacity record not found for event ${event_id}`);
+        }
+        const capacity = walkInRecord.walk_in_capacity || 0; // Ensure field exists
+      
+        const remainingWalkInCapacity = Math.max(0, capacity - walkInCount);
+      
+        const updatedWalkInRecord = await Walk_in.findOneAndUpdate(
+          { event_id: event_id },
+          {
+            $set: {
+              walk_in_capacity: capacity,
+              remainingWalkInCapacity: remainingWalkInCapacity,
+              updatedAt: new Date()
+            }
+          },
+          {
+            upsert: true,
+            new: true,
+            setDefaultsOnInsert: true
+          }
+        );
 
-  if (hasGroupMembers) {
-    // Step 2: If group members present, create group
-    const groupLeaderName = `${data.main_guest.first_name} ${data.main_guest.last_name}`;
+        return {
+          event_id,
+          walkInCount,
+          walkInCapacity: capacity,
+          remainingWalkInCapacity,
+          walkInRecord: updatedWalkInRecord
+        };
+      } catch (error) {
+        console.error('Error processing walk-in data:', error);
+        throw error;
+      }
+    };
 
-    const groupDoc = new EventGroup({
-      event_id,
-      group_leader_name: groupLeaderName,
-      group_leader_email: data.main_guest.email,
-      group_member_details: data.additional_guests.map(g => ({
-        group_first_name: g.first_name,
-        group_last_name: g.last_name,
-        group_email: g.email,
-        permission: g.permission === true || g.permission === 'yes'
-      }))
-    });
+    countWalkInAttendees();
 
-    savedGroup = await groupDoc.save();
+    if (additionalGuestsLength > 0) {
+      type = 'Group';
+      const groupMemberDetails = data.additional_guests.map(guest => ({
+        name: `${guest.first_name || ''} ${guest.last_name || ''}`.trim(),
+        email: guest.email || '',
+        permission: guest.preferences?.opt_in ?? false,
+      }));
 
-    // Step 3: Save main guest with group_id
-    const mainAttendee = new Attendee({
-      event_id,
-      first_name: data.main_guest.first_name,
-      last_name: data.main_guest.last_name,
-      email: data.main_guest.email,
-      registration_type,
-      registration_as,
-      is_paid,
-      amount_paid,
-      group_id: savedGroup._id.toString(),
-      source,
-      shopify_order_id,
-      shopify_product_id
-    });
-
-    const savedMainAttendee = await mainAttendee.save();
-
-    // Step 4: Save each group member as attendee
-    for (const guest of data.additional_guests) {
-      const groupMemberAttendee = new Attendee({
-        event_id,
-        first_name: guest.first_name,
-        last_name: guest.last_name,
-        email: guest.email,
-        permission: guest.permission === true || guest.permission === 'yes',
-        registration_type,
-        registration_as,
-        is_paid,
-        amount_paid,
-        group_id: savedGroup._id.toString(),
-        group_leader_name: groupLeaderName,
-        source,
-        shopify_order_id,
-        shopify_product_id
+      const eventGroup = new EventGroup({
+        event_id: data.event_id,
+        group_leader_name: `${data.main_guest.first_name || ''} ${data.main_guest.last_name || ''}`.trim(),
+        group_leader_email: data.main_guest.email || '',
+        group_member_details: groupMemberDetails,
+        created_at: new Date(),
+        updated_at: new Date(),
       });
 
-      const savedMember = await groupMemberAttendee.save();
-      groupMemberIds.push(savedMember._id);
+      savedEventGroup = await eventGroup.save();
     }
 
-    return {
-      message: 'Main attendee and group members saved',
-      group_id: savedGroup._id,
-      main_attendee_id: savedMainAttendee._id,
-      group_member_attendee_ids: groupMemberIds
-    };
-  } else {
-    // Step 5: No group members → insert only main attendee
-    const mainAttendee = new Attendee({
-      event_id,
-      first_name: data.main_guest.first_name,
-      last_name: data.main_guest.last_name,
-      email: data.main_guest.email,
-      registration_type,
-      registration_as,
-      is_paid,
-      amount_paid,
-      source,
-      shopify_order_id,
-      shopify_product_id
+    const mainGuest = new Attendee({
+      event_id: data.event_id,
+      first_name: data.main_guest.first_name || '',
+      last_name: data.main_guest.last_name || '',
+      name: `${data.main_guest.first_name || ''} ${data.main_guest.last_name || ''}`.trim(),
+      email: data.main_guest.email || '',
+      current_chm: data.main_guest.is_chm_patient === 'yes',
+      permission: data.main_guest.email_preferences?.opt_in ?? false,
+      registration_as: data.main_guest.registration_type || '',
+      registration_type: type,
+      group_id: savedEventGroup?._id || null,
+      created_at: new Date(),
+      updated_at: new Date(),
     });
 
-    const savedMainAttendee = await mainAttendee.save();
+    const savedMainGuest = await mainGuest.save();
+
+    const additionalGuestsPromises = data.additional_guests?.map(async (guest) => {
+      const attendee = new Attendee({
+        event_id: data.event_id,
+        first_name: guest.first_name || '',
+        last_name: guest.last_name || '',
+        email: guest.email || '',
+        name: `${guest.first_name || ''} ${guest.last_name || ''}`.trim(),
+        current_chm: guest.preferences?.chm ?? false,
+        permission: guest.preferences?.opt_in ?? false,
+        registration_as: data.main_guest.registration_type || '',
+        registration_type: type,
+        attendee_main_id: savedMainGuest._id,
+        group_id: savedEventGroup?._id || null,
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
+      return attendee.save();
+    }) || [];
+
+    const additionalGuests = await Promise.all(additionalGuestsPromises);
 
     return {
-      message: 'Only main attendee saved (no group)',
-      main_attendee_id: savedMainAttendee._id
+      success: true,
+      mainGuest: savedMainGuest,
+      eventGroup: savedEventGroup,
+      additionalGuests,
     };
+  } catch (error) {
+
+    console.error('Error in createAttendeeService:', error);
+    throw new Error(`Failed to create attendee: ${error.message}`);
   }
 };
 
-module.exports = { getAttendeeList, createAttendeeService};
-
-
-
-
-
+module.exports = { getAttendeeList, createAttendeeService };

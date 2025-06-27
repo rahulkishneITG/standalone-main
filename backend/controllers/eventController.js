@@ -4,8 +4,7 @@ const GroupAttendee = require('../models/groupmember.model.js');
 const jwt = require('jsonwebtoken');
 const Services = require('../services/auth.services.js');
 const NodeCache = require('node-cache');
-const { getPaginatedEvents, getEventCountData, createEventService } = require('../services/eventService.js');
-
+const { getPaginatedEvents, getEventCountData, createEventService, updateEvent } = require('../services/eventService.js');
 const cache = new NodeCache({ stdTTL: 300 });
 
 exports.createEvent = async (req, res) => {
@@ -61,31 +60,31 @@ exports.getEventCount = async (req, res) => {
     }
 };
 
-exports.deletedEvet = async (req, res) => {
-    const { delId } = req.body;
+exports.deletedEvent = async (req, res) => {
+    const { delId } = req.params;
+    console.log("Deleting event with ID:", delId);
 
     if (!delId || typeof delId !== 'string') {
         return res.status(400).json({ error: "Invalid or missing delId." });
     }
 
     try {
-
         const result = await Events.findByIdAndDelete(delId);
-
         if (!result) {
-            return res.status(404).json({ message: "Record not found" });
+            return res.status(404).json({ message: "Event not found" });
         }
 
-        res.status(200).json({ message: "Deleted successfully", deleted: result });
+        return res.status(200).json({ message: "Deleted successfully", deleted: result });
     } catch (error) {
         console.error("Error deleting document:", error);
-        res.status(500).json({ error: "Internal server error" });
+        return res.status(500).json({ error: "Internal server error" });
     }
 };
 
 exports.editEvent = async (req, res) => {
     try {
-        const { editId } = req.body;
+        const { editId } = req.params;
+        console.log(editId);
 
         if (!editId || typeof editId !== 'string') {
             return res.status(400).json({ error: 'Invalid or missing editId.' });
@@ -110,62 +109,24 @@ exports.editEvent = async (req, res) => {
 
 exports.updateEventData = async (req, res) => {
     try {
-        const {
-            _id,
-            name,
-            status,
-            draftStatus,
-            event_date,
-            event_time,
-            location,
-            max_capacity,
-            walk_in_capacity,
-            pre_registration_capacity,
-            pre_registration_start,
-            pre_registration_end,
-            description,
-            allow_group_registration,
-            enable_marketing_email,
-            pricing_pre_registration,
-            pricing_walk_in,
-            image_url,
-            shopify_product_id,
-        } = req.body;
+        const { updateId } = req.params;
+        const data = req.body;
 
-        if (!_id || typeof _id !== 'string') {
-            return res.status(400).json({ error: "Missing or invalid event ID" });
-        }
+        const updatedEvent = await updateEvent(updateId, data);
 
-        const updatedEvent = await updateEventService(_id, {
-            name,
-            status,
-            draftStatus,
-            event_date,
-            event_time,
-            location,
-            max_capacity,
-            walk_in_capacity,
-            pre_registration_capacity,
-            pre_registration_start,
-            pre_registration_end,
-            description,
-            allow_group_registration,
-            enable_marketing_email,
-            pricing_pre_registration,
-            pricing_walk_in,
-            image_url,
-            shopify_product_id,
-            updated_at: new Date()
+        res.status(200).json({
+            success: true,
+            message: 'Event updated successfully',
+            data: updatedEvent
         });
-
-        return res.status(200).json({
-            message: "Event updated successfully",
-            data: updatedEvent,
+    } catch (error) {
+        console.error('Error updating event:', error);
+        const statusCode = error.message === 'Event not found' ? 404 : 
+                         error.message.includes('is required') ? 400 : 500;
+        res.status(statusCode).json({
+            success: false,
+            message: error.message
         });
-
-    } catch (err) {
-        console.error("Error updating event:", err.message);
-        return res.status(500).json({ error: err.message });
     }
 };
 
