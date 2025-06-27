@@ -3,7 +3,7 @@ import { SearchIcon } from '@shopify/polaris-icons';
 import { useState, useCallback, useEffect } from 'react';
 import useProductStore from '../../../store/productStore.js';
 
-export default function ProductSearch({error}) {
+export default function ProductSearch({ error, onProductSelect }) {
   const [inputValue, setInputValue] = useState('');
   const [selectedOptions, setSelectedOptions] = useState([]);
 
@@ -35,6 +35,9 @@ export default function ProductSearch({error}) {
       if (selectedValue) {
         setInputValue(selectedValue.label);
         setSelectedProduct(selectedValue);
+        if (onProductSelect) {
+          onProductSelect(selectedValue);
+        }
       }
     },
     [searchResults]
@@ -68,11 +71,6 @@ export default function ProductSearch({error}) {
         listTitle="Matching Products"
         loading={loading}
       />
-      {error && (
-        <Text variant="bodySm" color="critical">
-          {error}
-        </Text>
-      )}
     </div>
   );
 }

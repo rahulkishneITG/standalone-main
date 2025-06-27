@@ -18,6 +18,7 @@ const attendeeSchema = new mongoose.Schema({
   amount_paid: { type: mongoose.Decimal128, default: 0.00 },
   registered_at: { type: Date, default: Date.now },
   group_id: { type: String },
+  attendee_main_id: { type: String },
   source: { type: String },
   shopify_order_id: { type: String },
   shopify_product_id: { type: String },

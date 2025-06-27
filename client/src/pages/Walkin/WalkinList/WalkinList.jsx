@@ -1,70 +1,59 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Card, IndexTable, Page, Pagination, Spinner, Modal, TextContainer } from '@shopify/polaris';
+import {
+  Button,
+  Card,
+  Icon,
+  IndexTable,
+  Page,
+  Pagination,
+  Spinner,
+  TextField,
+  Modal,
+  TextContainer,
+} from '@shopify/polaris';
+import { SortIcon } from '@shopify/polaris-icons';
 import { useNavigate } from 'react-router-dom';
-import useEventStore from '../../../store/eventStore.js';
-import { formatDate } from '../../../utils/dateFormatter.js';
-import FullPageLoader from '../../../components/Loader.jsx';
-import TableHeader from '../../../components/Main Content/Table/TableHeader.jsx';
-import TableRow from '../../../components/Main Content/Table/TableRow.jsx';
-import useDebounce from '../../../hooks/useDebounce.js';
-import styles from './WalkinList.module.css';
+import useWalkinStore from '../../../store/walkinStore';
+import { formatDate } from '../../../utils/dateFormatter';
+import useDebounce from '../../../hooks/useDebounce'; // assuming you have this hook
 import toast from 'react-hot-toast';
+import styles from './WalkinList.module.css';
 
-const ROWS_PER_PAGE = 3;
+const ROWS_PER_PAGE = 5;
 
 const WalkinList = () => {
   const [searchValue, setSearchValue] = useState('');
-  const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState(null);
 
-  const debouncedSearch = useDebounce(searchValue, 100);
-  const isFirstLoad = useRef(true);
-
-  const { eventList, totalCount, loading, fetchEventList, deleteEvent } = useEventStore();
   const navigate = useNavigate();
+  const isFirstLoad = useRef(true);
+  const debouncedSearch = useDebounce(searchValue, 300);
+
+  const {
+    walkinList,
+    totalCount,
+    loading,
+    fetchWalkinList,
+    deleteWalkin,
+  } = useWalkinStore();
 
   const fetchData = useCallback(() => {
-    fetchEventList({
+    fetchWalkinList({
       page: currentPage,
       limit: ROWS_PER_PAGE,
       search: debouncedSearch,
-      sortBy,
+      sortBy: 'event_name',
       order: sortOrder,
     });
-  }, [currentPage, debouncedSearch, sortBy, sortOrder, fetchEventList]);
+  }, [currentPage, debouncedSearch, sortOrder, fetchWalkinList]);
 
   useEffect(() => {
     fetchData();
     isFirstLoad.current = false;
   }, [fetchData]);
-
-  const handleEdit = (index) => {
-    const eventId = eventList[index]._id;
-    navigate(`/event/edit/${eventId}`);
-  };
-
-  const handleDelete = (index) => {
-    setDeleteIndex(index);
-    setShowDeleteModal(true);
-  };
-
-  const handleDeleteConfirmed = async () => {
-    const eventId = eventList[deleteIndex]._id;
-    setShowDeleteModal(false);
-    await deleteEvent(eventId, () => {
-      fetchEventList({
-        page: currentPage,
-        limit: ROWS_PER_PAGE,
-        search: debouncedSearch,
-        sortBy,
-        order: sortOrder,
-      });
-      toast.success('Event deleted successfully');
-    });
-  };
 
   const handleSearchChange = (value) => {
     setSearchValue(value);
@@ -78,63 +67,58 @@ const WalkinList = () => {
 
   const handleSort = () => {
     setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-    setSortBy('name');
     setCurrentPage(1);
+  };
+  const handleForm = (index) => {
+    const eventId = walkinList[index].event_id;
+    navigate(`/walkin/walkin-form/${eventId}`);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (deleteIndex === null) return;
+    const walkinId = walkinList[deleteIndex]._id;
+    setShowDeleteModal(false);
+    try {
+      await deleteWalkin(walkinId);
+      toast.success('Walk-in deleted successfully');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to delete walk-in');
+    }
   };
 
   const paginatedRows = useMemo(() => {
-    return eventList.map((event) => [
-      event.name,
-      event.status,
-      formatDate(event.event_date),
-      event.location,
-      event.max_capacity,
-      event.pre_registration_capacity,
-      event.walk_in_capacity,
-      event._id,
+    return walkinList.map((walkin) => [
+      walkin.event_name,
+      formatDate(walkin.event_date),
+      walkin.walk_in_capacity,
+      walkin.remainingWalkInCapacity,
+      `$${walkin.pricing_walk_in}`,
+      walkin._id,
+      walkin.event_id,
     ]);
-  }, [eventList]);
-  
-  const rowMarkup = loading ? (
-    <IndexTable.Row>
-      <IndexTable.Cell colSpan={8}>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2rem', width: '100%' }}>
-          <Spinner accessibilityLabel="Loading attendees" size="large" />
-        </div>
-      </IndexTable.Cell>
-    </IndexTable.Row>
-  ) : (
-    paginatedRows.map((row, index) => (
-      <TableRow
-        key={index}
-        index={index}
-        row={row}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
-    ))
-  );
-  
-  
-  
+  }, [walkinList]);
 
   const totalPages = Math.ceil(totalCount / ROWS_PER_PAGE);
 
-
-  if (loading && isFirstLoad.current) return <FullPageLoader />;
+  if (loading && isFirstLoad.current) {
+    return (
+      <div className={styles.loader}>
+        <Spinner accessibilityLabel="Loading walk-ins" size="large" />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.eventList}>
       <Modal
         open={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        title="Delete Event"
+        title="Delete Walk-in"
         primaryAction={{
           content: 'Delete',
           destructive: true,
-          onAction: async () => {
-            await handleDeleteConfirmed();
-          },
+          onAction: handleDeleteConfirmed,
         }}
         secondaryActions={[
           {
@@ -145,37 +129,77 @@ const WalkinList = () => {
       >
         <Modal.Section>
           <TextContainer>
-            Are you sure you want to delete this event? This action cannot be undone.
+            Are you sure you want to delete this walk-in? This action cannot be undone.
           </TextContainer>
         </Modal.Section>
       </Modal>
+
       <Page fullWidth>
         <Card padding="0">
-        
-          <TableHeader
-            value={searchValue}
-            onChange={handleSearchChange}
-            onCancel={handleCancelSearch}
-            onSort={handleSort}
-          />
+          <div className={styles.headerContainer}>
+            <div className={styles.searchContainer}>
+              <TextField
+                value={searchValue}
+                onChange={handleSearchChange}
+                placeholder="Search walk-ins"
+                clearButton
+                onClearButtonClick={handleCancelSearch}
+                labelHidden
+              />
+            </div>
+            <div className={styles.actionsContainer}>
+              <Button onClick={handleCancelSearch} variant="tertiary">
+                Cancel
+              </Button>
+              <Button onClick={handleSort} icon={<Icon source={SortIcon} />}>
+               
+              </Button>
+            </div>
+          </div>
+
           <IndexTable
-            resourceName={{ singular: 'event', plural: 'events' }}
-            itemCount={paginatedRows.length}
+            resourceName={{ singular: 'walk-in', plural: 'walk-ins' }}
+            itemCount={walkinList.length}
             headings={[
               { title: 'Event Name' },
-              { title: 'Status' },
               { title: 'Date' },
-              { title: 'Location' },
-              { title: 'Total Seat Count' },
-              { title: 'Pre-registered Cap' },
               { title: 'Walk-in Cap' },
+              { title: 'Remaining' },
+              { title: 'Price' },
               { title: 'Actions' },
             ]}
             selectable={false}
           >
-            
-            {rowMarkup}
-            
+            {loading ? (
+              <IndexTable.Row>
+                <IndexTable.Cell colSpan={6}>
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                    <Spinner accessibilityLabel="Loading walk-ins" size="large" />
+                  </div>
+                </IndexTable.Cell>
+              </IndexTable.Row>
+            ) : (
+              walkinList.map((walkin, index) => (
+                <IndexTable.Row id={walkin._id} key={walkin._id} position={index}>
+                  <IndexTable.Cell>{walkin.event_name}</IndexTable.Cell>
+                  <IndexTable.Cell>{formatDate(walkin.event_date)}</IndexTable.Cell>
+                  <IndexTable.Cell>{walkin.walk_in_capacity}</IndexTable.Cell>
+                  <IndexTable.Cell>{walkin.remainingWalkInCapacity}</IndexTable.Cell>
+                  <IndexTable.Cell>${walkin.pricing_walk_in}</IndexTable.Cell>
+                  <IndexTable.Cell>
+                    <div className={styles.actions}>
+                      <Button variant="plain" onClick={() => handleForm(index)}>
+                        Form
+                      </Button>
+                      {/* Uncomment below if delete needed */}
+                      {/* <Button variant="destructive" onClick={() => handleDelete(index)}>
+                        Delete
+                      </Button> */}
+                    </div>
+                  </IndexTable.Cell>
+                </IndexTable.Row>
+              ))
+            )}
           </IndexTable>
 
           <div className={styles.paginationContainer}>

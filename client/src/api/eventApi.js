@@ -47,3 +47,9 @@ export const getEditEventData = async (eventId) => {
     throw error; 
   }
 };
+export const createEvent = async (payload) => {
+  const response = await axios.post(`${BASE_URL}/createEvent`, payload, {
+    headers: getAuthHeaders(),
+  });
+  return response.data;
+};

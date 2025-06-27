@@ -7,9 +7,9 @@ const groupMemberSchema = new mongoose.Schema({
 });
 
 const eventGroupSchema = new mongoose.Schema({
-  event_id: { type: String, required: true },
-  group_leader_name: { type: String, required: true },
-  group_leader_email: { type: String, required: true },
+  event_id: { type: String},
+  group_leader_name: { type: String },
+  group_leader_email: { type: String},
   group_member_details: [groupMemberSchema],
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
