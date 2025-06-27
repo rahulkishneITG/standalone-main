@@ -4,8 +4,7 @@ const GroupAttendee = require('../models/groupmember.model.js');
 const jwt = require('jsonwebtoken');
 const Services = require('../services/auth.services.js');
 const NodeCache = require('node-cache');
-const { getPaginatedEvents, getEventCountData, createEventService } = require('../services/eventService.js');
-
+const { getPaginatedEvents, getEventCountData, createEventService, updateEvent } = require('../services/eventService.js');
 const cache = new NodeCache({ stdTTL: 300 });
 
 exports.createEvent = async (req, res) => {
@@ -82,7 +81,6 @@ exports.deletedEvent = async (req, res) => {
     }
 };
 
-
 exports.editEvent = async (req, res) => {
     try {
         const { editId } = req.params;
@@ -111,62 +109,24 @@ exports.editEvent = async (req, res) => {
 
 exports.updateEventData = async (req, res) => {
     try {
-        const {
-            _id,
-            name,
-            status,
-            draftStatus,
-            event_date,
-            event_time,
-            location,
-            max_capacity,
-            walk_in_capacity,
-            pre_registration_capacity,
-            pre_registration_start,
-            pre_registration_end,
-            description,
-            allow_group_registration,
-            enable_marketing_email,
-            pricing_pre_registration,
-            pricing_walk_in,
-            image_url,
-            shopify_product_id,
-        } = req.body;
+        const { updateId } = req.params;
+        const data = req.body;
 
-        if (!_id || typeof _id !== 'string') {
-            return res.status(400).json({ error: "Missing or invalid event ID" });
-        }
+        const updatedEvent = await updateEvent(updateId, data);
 
-        const updatedEvent = await updateEventService(_id, {
-            name,
-            status,
-            draftStatus,
-            event_date,
-            event_time,
-            location,
-            max_capacity,
-            walk_in_capacity,
-            pre_registration_capacity,
-            pre_registration_start,
-            pre_registration_end,
-            description,
-            allow_group_registration,
-            enable_marketing_email,
-            pricing_pre_registration,
-            pricing_walk_in,
-            image_url,
-            shopify_product_id,
-            updated_at: new Date()
+        res.status(200).json({
+            success: true,
+            message: 'Event updated successfully',
+            data: updatedEvent
         });
-
-        return res.status(200).json({
-            message: "Event updated successfully",
-            data: updatedEvent,
+    } catch (error) {
+        console.error('Error updating event:', error);
+        const statusCode = error.message === 'Event not found' ? 404 : 
+                         error.message.includes('is required') ? 400 : 500;
+        res.status(statusCode).json({
+            success: false,
+            message: error.message
         });
-
-    } catch (err) {
-        console.error("Error updating event:", err.message);
-        return res.status(500).json({ error: err.message });
     }
 };
 

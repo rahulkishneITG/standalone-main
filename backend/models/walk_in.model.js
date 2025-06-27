@@ -18,6 +18,10 @@ const walkInEventSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  remainingWalkInCapacity: {
+    type: Number,
+    default: 0
+  },
   pricing_walk_in: {
     type: Number,
     default: 0

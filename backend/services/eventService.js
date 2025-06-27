@@ -59,16 +59,16 @@ async function getEventCountData() {
       preAttendees
     ] = await Promise.all([
       Events.countDocuments(),
-      Attendee.countDocuments({ registration_type: "Walkin" }),
-      Attendee.countDocuments({ registration_type: "Pre" }),
+      Attendee.countDocuments({ registration_as: "walk-in" }),
+      Attendee.countDocuments({ registration_as: "pre" }),
       Events.aggregate([
         { $group: { _id: null, totalPreprice: { $sum: "$pricing_pre_registration" } } }
       ]),
       Events.aggregate([
         { $group: { _id: null, totalWalkinPrice: { $sum: "$pricing_walk_in" } } }
       ]),
-      Attendee.find({ registration_type: "Walkin" }),
-      Attendee.find({ registration_type: "Pre" })
+      Attendee.find({ registration_as: "walk-in" }),
+      Attendee.find({ registration_as: "pre" })
     ]);
 
 
@@ -211,6 +211,32 @@ const getEventByIdService = async (eventId) => {
   return await Events.findById(eventId);
 };
 
+const updateEvent = async (updateId, data) => {
+    if (!updateId) {
+        throw new Error('Update ID is required');
+    }
+
+    if (!data || Object.keys(data).length === 0) {
+        throw new Error('Update data is required');
+    }
+
+    const updatedEvent = await Events.findByIdAndUpdate(
+        updateId,
+        { $set: data },
+        {
+            new: true,
+            runValidators: true
+        }
+    );
+
+    if (!updatedEvent) {
+        throw new Error('Event not found');
+    }
+
+    return updatedEvent;
+};
 
 
-module.exports = { getEventCountData, getPaginatedEvents, createEventService, getEventByIdService };
+
+
+module.exports = { getEventCountData, getPaginatedEvents, createEventService, getEventByIdService, updateEvent };

@@ -1,18 +1,23 @@
-
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const Groupmember = require('../models/groupmember.model.js');
 const Attendee = require('../models/attendee.model.js');
-const { createAttendeeService } = require('../services/attendee.services.js');  
+const { getAttendeeList, createAttendeeService }  = require('../services/attendeeService.js');
 
 dotenv.config();
 
 const eventData = async () => {
     try {
+        // Check if the Attendee collection already has data
+        const attendeeCount = await Attendee.countDocuments();
+        if (attendeeCount > 0) {
+            console.log('Data already exists in the Attendee collection. Seeder will not run.');
+            process.exit(0);
+        }
+
         const event_id = '65abcde123456789abcdef12';
 
         const payloads = [
-    
             {
                 main_guest: {
                     first_name: 'Amit',
@@ -51,7 +56,7 @@ const eventData = async () => {
                 },
                 event_id,
                 registration_type: 'group',
-                registration_as: 'walh-in',
+                registration_as: 'walk-in',
                 is_paid: 'yes',
                 amount_paid: 500,
                 source: 'referral',

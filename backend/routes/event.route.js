@@ -9,6 +9,6 @@ router.get('/getEventList',authMiddleware, getEventList);
 router.post('/createEvent',authMiddleware, createEvent); 
 router.delete('/deletedEvent/:delId',authMiddleware, deletedEvent); 
 router.get('/editEvent/:editId',authMiddleware, editEvent); 
-router.post('/updateEventData',authMiddleware, updateEventData); 
+router.put('/updateEventData/:updateId',authMiddleware, updateEventData); 
 
 module.exports = router;
