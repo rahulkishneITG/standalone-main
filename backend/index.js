@@ -15,14 +15,17 @@ const eventseeder = require('./seed/eventseed.js')
 const groupregistre = require('./seed/groupregisterseed.js')
 
 dotenv.config();
-
+const allowedOrigins = {
+  development: 'http://localhost:3000',
+  production: 'https://standalone-main.vercel.app',
+};
 // Setup middlewares
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors({
-  origin: 'http://localhost:3000', 
+  origin: allowedOrigins[process.env.NODE_ENV] || '*',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
