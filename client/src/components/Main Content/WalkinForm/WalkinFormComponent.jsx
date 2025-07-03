@@ -1,85 +1,3 @@
-// // components/EventForm/EventForm.jsx
-// import React, { useState } from 'react';
-// import { Button, Card, FormLayout, Text } from '@shopify/polaris';
-// import MainGuestSection from './MainGuestSection';
-// import EmailPreferences from './EmailPreferences';
-// import AdditionalGuests from './AdditionalGuests';
-// import CHMAffiliation from './CHMAffiliation';
-// import styles from './WalkinFormComponent.module.css';
-
-// const WalkinFormComponent = () => {
-//   const [guests, setGuests] = useState([]);
-//   const [optIn, setOptIn] = useState(false);
-//   const [isCHM, setIsCHM] = useState('');
-
-//   const maxGuests = 5;
-
-//   const addGuest = () => {
-//     if (guests.length + 1 >= maxGuests) return;
-//     setGuests([...guests, { first_name: '', last_name: '', email: '', preferences: {} }]);
-//   };
-
-//   const removeGuest = (index) => {
-//     setGuests(guests.filter((_, i) => i !== index));
-//   };
-
-//   const updateGuest = (index, data) => {
-//     const updated = [...guests];
-//     updated[index] = data;
-//     setGuests(updated);
-//   };
-
-//   const handleSubmit = (e) => {
-//     e.preventDefault();
-//     const form = e.target;
-//     const payload = {
-//       event_id: form.event_id.value,
-//       main_guest: {
-//         first_name: form.main_first_name.value,
-//         last_name: form.main_last_name.value,
-//         email: form.main_email.value,
-//       },
-//       email_preferences: {
-//         opt_in: form.opt_in.checked,
-//         dr_brownstein: form.updates_dr_brownstein.checked,
-//         chm: form.updates_chm.checked,
-//       },
-//       additional_guests: guests,
-//       is_chm_patient: form.is_chm_patient.value,
-//       provider_name: form.provider_name?.value || '',
-//       registration_type: form.registration_type.value,
-//     };
-//     console.log(payload);
-//     alert("Submitted. Check console for payload.");
-//   };
-
-//   return (
-//     <form onSubmit={handleSubmit} className={styles.form}>
-//       <input type="hidden" name="event_id" value="custom_event_id" className={styles.hidden}/>
-//       <input type="hidden" name="registration_type" value="walkin" className={styles.hidden}/>
-//       <Card>
-//         <FormLayout gap="2">
-//           <Text variant="headingMd">Walkin Form</Text>
-//           <MainGuestSection />
-//           <EmailPreferences optIn={optIn} setOptIn={setOptIn} />
-//           <AdditionalGuests
-//             guests={guests}
-//             addGuest={addGuest}
-//             removeGuest={removeGuest}
-//             updateGuest={updateGuest}
-//             maxGuests={maxGuests}
-//           />
-//           <CHMAffiliation isCHM={isCHM} setIsCHM={setIsCHM} />
-//           <Button submit primary>Submit Registration</Button>
-
-//         </FormLayout>
-//       </Card>
-//     </form>
-//   );
-// };
-
-// export default WalkinFormComponent;
-// components/WalkinForm/WalkinFormComponent.jsx
 import React, { useState } from 'react';
 import { Button, Card, FormLayout, Text } from '@shopify/polaris';
 import MainGuestSection from './MainGuestSection';
@@ -87,8 +5,9 @@ import EmailPreferences from './EmailPreferences';
 import AdditionalGuests from './AdditionalGuests';
 import CHMAffiliation from './CHMAffiliation';
 import styles from './WalkinFormComponent.module.css';
+import { submitWalkinForm } from '../../../api/walkinApi';
 
-const WalkinFormComponent = () => {
+const WalkinFormComponent = ({ event_id }) => {
   const [mainGuest, setMainGuest] = useState({ first_name: '', last_name: '', email: '' });
   const [optIn, setOptIn] = useState(false);
   const [emailPrefs, setEmailPrefs] = useState({ dr_brownstein: false, chm: false });
@@ -105,23 +24,23 @@ const WalkinFormComponent = () => {
   };
 
   const removeGuest = (index) => {
-    const newGuests = guests.filter((_, i) => i !== index);
-    setGuests(newGuests);
-    const newErrors = { ...errors };
-    delete newErrors[`guest_${index}_first`];
-    delete newErrors[`guest_${index}_last`];
-    delete newErrors[`guest_${index}_email`];
+    const updated = guests.filter((_, i) => i !== index);
+    setGuests(updated);
+    const updatedErrors = { ...errors };
+    delete updatedErrors[`guest_${index}_first`];
+    delete updatedErrors[`guest_${index}_last`];
+    delete updatedErrors[`guest_${index}_email`];
 
     for (let i = index + 1; i < guests.length; i++) {
-      newErrors[`guest_${i - 1}_first`] = newErrors[`guest_${i}_first`];
-      newErrors[`guest_${i - 1}_last`] = newErrors[`guest_${i}_last`];
-      newErrors[`guest_${i - 1}_email`] = newErrors[`guest_${i}_email`];
-      delete newErrors[`guest_${i}_first`];
-      delete newErrors[`guest_${i}_last`];
-      delete newErrors[`guest_${i}_email`];
+      updatedErrors[`guest_${i - 1}_first`] = updatedErrors[`guest_${i}_first`];
+      updatedErrors[`guest_${i - 1}_last`] = updatedErrors[`guest_${i}_last`];
+      updatedErrors[`guest_${i - 1}_email`] = updatedErrors[`guest_${i}_email`];
+      delete updatedErrors[`guest_${i}_first`];
+      delete updatedErrors[`guest_${i}_last`];
+      delete updatedErrors[`guest_${i}_email`];
     }
 
-    setErrors(newErrors);
+    setErrors(updatedErrors);
   };
 
   const updateGuest = (index, data) => {
@@ -149,36 +68,52 @@ const WalkinFormComponent = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const form = e.target;
     if (!validate()) return;
 
     const payload = {
-      event_id: 'custom_event_id',
-      registration_type: 'walkin',
-      main_guest: mainGuest,
-      email_preferences: {
-        opt_in: optIn,
-        dr_brownstein: emailPrefs.dr_brownstein,
-        chm: emailPrefs.chm,
+      event_id,
+      registration_type: form.registration_type.value, // 👈 You said this is pre-registration form
+      main_guest: {
+        ...mainGuest,
+        email_preferences: {
+          opt_in: optIn,
+          dr_brownstein: emailPrefs.dr_brownstein,
+          chm: emailPrefs.chm,
+        },
       },
       additional_guests: guests,
       is_chm_patient: isCHM,
       provider_name: providerName || '',
     };
 
-    console.log(payload);
+    console.log('Final Payload:', payload);
+    await submitWalkinForm(payload);
     alert('Submitted. Check console for payload.');
   };
 
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
+      <input type="hidden" name="event_id" value="custom_event_id" className={styles.hidden}/>
+       <input type="hidden" name="registration_type" value="walkin" className={styles.hidden}/>
       <Card>
         <FormLayout>
-          <Text variant="headingMd">Walkin Form</Text>
+          <Text variant="headingMd">Pre-Registration Form</Text>
 
-          <MainGuestSection mainGuest={mainGuest} setMainGuest={setMainGuest} errors={errors} setErrors={setErrors} />
-          <EmailPreferences optIn={optIn} setOptIn={setOptIn} emailPrefs={emailPrefs} setEmailPrefs={setEmailPrefs} />
+          <MainGuestSection
+            mainGuest={mainGuest}
+            setMainGuest={setMainGuest}
+            errors={errors}
+            setErrors={setErrors}
+          />
+          <EmailPreferences
+            optIn={optIn}
+            setOptIn={setOptIn}
+            emailPrefs={emailPrefs}
+            setEmailPrefs={setEmailPrefs}
+          />
           <AdditionalGuests
             guests={guests}
             addGuest={addGuest}

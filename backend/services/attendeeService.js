@@ -97,66 +97,156 @@ const getAttendeeList = async (queryParams = {}) => {
   };
 };
 
+// const createAttendeeService = async (data) => {
+//   try {
+//     const additionalGuestsLength = data?.additional_guests?.length || 0;
+//     let savedEventGroup = null;
+//     let type = 'Individual';
+
+//     const event_id = data.event_id;
+//     // const event_id = "6862686d5d6763ec03d5ebb5";
+
+//     const countWalkInAttendees = async () => {
+//       try {
+//         if (!event_id) {
+//           throw new Error('Event ID is required');
+//         }
+//         console.log('event_id',event_id);
+
+//         const walkInCount = await Attendee.countDocuments({
+//           event_id: event_id,
+//           registration_as: "walkin"
+//         });
+
+//         console.log("walkInCount1",walkInCount);
+
+//         const walkInRecord = await Walk_in.findOne({ event_id: event_id });
+//         if (!walkInRecord) {
+//           throw new Error(`Walk-in capacity record not found for event ${event_id}`);
+//         }
+//         const capacity = walkInRecord.walk_in_capacity || 0; // Ensure field exists
+      
+//         const remainingWalkInCapacity = Math.max(0, capacity - walkInCount);
+//         console.log("remainingWalkInCapacity",remainingWalkInCapacity);
+      
+//         const updatedWalkInRecord = await Walk_in.findOneAndUpdate(
+//           { event_id: event_id },
+//           {
+//             $set: {
+//               walk_in_capacity: capacity,
+//               remainingWalkInCapacity: remainingWalkInCapacity,
+//               updatedAt: new Date()
+//             }
+//           },
+//           {
+//             upsert: true,
+//             new: true,
+//             setDefaultsOnInsert: true
+//           }
+//         );
+
+//         console.log("updatedWalkInRecord",updatedWalkInRecord);
+
+//         return {
+//           event_id,
+//           walkInCount,
+//           walkInCapacity: capacity,
+//           remainingWalkInCapacity,
+//           walkInRecord: updatedWalkInRecord
+//         };
+//       } catch (error) {
+//         console.error('Error processing walk-in data:', error);
+//         throw error;
+//       }
+//     };
+
+//     countWalkInAttendees();
+
+//     if (additionalGuestsLength > 0) {
+//       type = 'Group';
+//       const groupMemberDetails = data.additional_guests.map(guest => ({
+//         name: `${guest.first_name || ''} ${guest.last_name || ''}`.trim(),
+//         email: guest.email || '',
+//         permission: guest.preferences?.opt_in ?? false,
+//       }));
+
+//       const eventGroup = new EventGroup({
+//         event_id: data.event_id,
+//         group_leader_name: `${data.main_guest.first_name || ''} ${data.main_guest.last_name || ''}`.trim(),
+//         group_leader_email: data.main_guest.email || '',
+//         group_member_details: groupMemberDetails,
+//         created_at: new Date(),
+//         updated_at: new Date(),
+//       });
+
+//       savedEventGroup = await eventGroup.save();
+//     }
+
+//     const mainGuest = new Attendee({
+//       event_id: data.event_id,
+//       first_name: data.main_guest.first_name || '',
+//       last_name: data.main_guest.last_name || '',
+//       name: `${data.main_guest.first_name || ''} ${data.main_guest.last_name || ''}`.trim(),
+//       email: data.main_guest.email || '',
+//       current_chm: data.main_guest.is_chm_patient === 'yes',
+//       permission: data.main_guest.email_preferences?.opt_in ?? false,
+//       registration_as: data.main_guest.registration_type || '',
+//       registration_type: type,
+//       group_id: savedEventGroup?._id || null,
+//       created_at: new Date(),
+//       updated_at: new Date(),
+//     });
+
+//     const savedMainGuest = await mainGuest.save();
+
+//     const additionalGuestsPromises = data.additional_guests?.map(async (guest) => {
+//       const attendee = new Attendee({
+//         event_id: data.event_id,
+//         first_name: guest.first_name || '',
+//         last_name: guest.last_name || '',
+//         email: guest.email || '',
+//         name: `${guest.first_name || ''} ${guest.last_name || ''}`.trim(),
+//         current_chm: guest.preferences?.chm ?? false,
+//         permission: guest.preferences?.opt_in ?? false,
+//         registration_as: data.main_guest.registration_type || '',
+//         registration_type: type,
+//         attendee_main_id: savedMainGuest._id,
+//         group_id: savedEventGroup?._id || null,
+//         created_at: new Date(),
+//         updated_at: new Date(),
+//       });
+//       return attendee.save();
+//     }) || [];
+
+//     const additionalGuests = await Promise.all(additionalGuestsPromises);
+
+//     return {
+//       success: true,
+//       mainGuest: savedMainGuest,
+//       eventGroup: savedEventGroup,
+//       additionalGuests,
+//     };
+//   } catch (error) {
+
+//     console.error('Error in createAttendeeService:', error);
+//     throw new Error(`Failed to create attendee: ${error.message}`);
+//   }
+// };
+
 const createAttendeeService = async (data) => {
   try {
     const additionalGuestsLength = data?.additional_guests?.length || 0;
     let savedEventGroup = null;
-    let type = 'Individual';
+    let type = additionalGuestsLength > 0 ? 'Group' : 'Individual';
 
-    // const event_id = data.event_id;
-    const event_id = "6862686d5d6763ec03d5ebb5";
+    const event_id = data.event_id;
+    const registrationType = data.registration_type;
+    if (!event_id) throw new Error('Event ID is required');
 
-    const countWalkInAttendees = async () => {
-      try {
-        if (!event_id) {
-          throw new Error('Event ID is required');
-        }
-        const walkInCount = await Attendee.countDocuments({
-          event_id: event_id,
-          registration_as: "walk-in"
-        });
+    
 
-        const walkInRecord = await Walk_in.findOne({ event_id: event_id });
-        if (!walkInRecord) {
-          throw new Error(`Walk-in capacity record not found for event ${event_id}`);
-        }
-        const capacity = walkInRecord.walk_in_capacity || 0; // Ensure field exists
-      
-        const remainingWalkInCapacity = Math.max(0, capacity - walkInCount);
-      
-        const updatedWalkInRecord = await Walk_in.findOneAndUpdate(
-          { event_id: event_id },
-          {
-            $set: {
-              walk_in_capacity: capacity,
-              remainingWalkInCapacity: remainingWalkInCapacity,
-              updatedAt: new Date()
-            }
-          },
-          {
-            upsert: true,
-            new: true,
-            setDefaultsOnInsert: true
-          }
-        );
-
-        return {
-          event_id,
-          walkInCount,
-          walkInCapacity: capacity,
-          remainingWalkInCapacity,
-          walkInRecord: updatedWalkInRecord
-        };
-      } catch (error) {
-        console.error('Error processing walk-in data:', error);
-        throw error;
-      }
-    };
-
-    countWalkInAttendees();
-
+    // Save Event Group if applicable
     if (additionalGuestsLength > 0) {
-      type = 'Group';
       const groupMemberDetails = data.additional_guests.map(guest => ({
         name: `${guest.first_name || ''} ${guest.last_name || ''}`.trim(),
         email: guest.email || '',
@@ -164,7 +254,7 @@ const createAttendeeService = async (data) => {
       }));
 
       const eventGroup = new EventGroup({
-        event_id: data.event_id,
+        event_id,
         group_leader_name: `${data.main_guest.first_name || ''} ${data.main_guest.last_name || ''}`.trim(),
         group_leader_email: data.main_guest.email || '',
         group_member_details: groupMemberDetails,
@@ -174,45 +264,77 @@ const createAttendeeService = async (data) => {
 
       savedEventGroup = await eventGroup.save();
     }
-
-    const mainGuest = new Attendee({
-      event_id: data.event_id,
+    console.log("mainData",data);
+    // Save Main Guest
+    const savedMainGuest = await new Attendee({
+      event_id,
       first_name: data.main_guest.first_name || '',
       last_name: data.main_guest.last_name || '',
       name: `${data.main_guest.first_name || ''} ${data.main_guest.last_name || ''}`.trim(),
       email: data.main_guest.email || '',
-      current_chm: data.main_guest.is_chm_patient === 'yes',
+      current_chm: data.is_chm_patient === 'yes',
       permission: data.main_guest.email_preferences?.opt_in ?? false,
-      registration_as: data.main_guest.registration_type || '',
+      registration_as: registrationType || '', 
       registration_type: type,
       group_id: savedEventGroup?._id || null,
       created_at: new Date(),
       updated_at: new Date(),
-    });
+    }).save();
 
-    const savedMainGuest = await mainGuest.save();
-
-    const additionalGuestsPromises = data.additional_guests?.map(async (guest) => {
-      const attendee = new Attendee({
-        event_id: data.event_id,
+    // Save Additional Guests
+    const additionalGuestsPromises = (data.additional_guests || []).map(async (guest) => {
+      return new Attendee({
+        event_id,
         first_name: guest.first_name || '',
         last_name: guest.last_name || '',
-        email: guest.email || '',
         name: `${guest.first_name || ''} ${guest.last_name || ''}`.trim(),
+        email: guest.email || '',
         current_chm: guest.preferences?.chm ?? false,
         permission: guest.preferences?.opt_in ?? false,
-        registration_as: data.main_guest.registration_type || '',
+        registration_as: registrationType || '', 
         registration_type: type,
         attendee_main_id: savedMainGuest._id,
         group_id: savedEventGroup?._id || null,
         created_at: new Date(),
         updated_at: new Date(),
-      });
-      return attendee.save();
-    }) || [];
+      }).save();
+    });
 
     const additionalGuests = await Promise.all(additionalGuestsPromises);
+    const countWalkInAttendees = async () => {
+      const walkInCount = await Attendee.countDocuments({
+        event_id,
+        registration_as: "walkin"
+      });
 
+      const walkInRecord = await Walk_in.findOne({ event_id });
+      if (!walkInRecord) {
+        throw new Error(`Walk-in capacity record not found for event ${event_id}`);
+      }
+
+      const capacity = walkInRecord.walk_in_capacity || 0;
+      const remainingWalkInCapacity = Math.max(0, capacity - walkInCount);
+
+      if (remainingWalkInCapacity <= 0) {
+        throw new Error("Walk-in capacity is full");
+      }
+
+      const updatedWalkInRecord = await Walk_in.findOneAndUpdate(
+        { event_id },
+        {
+          $set: {
+            walk_in_capacity: capacity,
+            remainingWalkInCapacity,
+            updatedAt: new Date()
+          }
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+
+      return { walkInCount, capacity, remainingWalkInCapacity, walkInRecord: updatedWalkInRecord };
+    };
+    console.log(await countWalkInAttendees());
+    await countWalkInAttendees(); 
     return {
       success: true,
       mainGuest: savedMainGuest,
@@ -220,10 +342,10 @@ const createAttendeeService = async (data) => {
       additionalGuests,
     };
   } catch (error) {
-
     console.error('Error in createAttendeeService:', error);
     throw new Error(`Failed to create attendee: ${error.message}`);
   }
 };
+
 
 module.exports = { getAttendeeList, createAttendeeService };

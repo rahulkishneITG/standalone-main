@@ -4,6 +4,6 @@ const { getAttendeeList,createAttendee } = require('../controllers/attendeeContr
 const  authMiddleware  = require('../middleware/auth.middleware.js');
 
 router.get('/getAttendeeList',authMiddleware,getAttendeeList);
-router.post('/createAttendee',authMiddleware,createAttendee);
+router.post('/createAttendee',createAttendee);
 
 module.exports = router;

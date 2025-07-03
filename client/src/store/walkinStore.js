@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getWalkinList, getWalkinById } from '../api/walkinApi';
+import { getWalkinList, getWalkinById, submitWalkinForm } from '../api/walkinApi';
 
 const initialState = {
   walkinList: [], 
@@ -52,6 +52,26 @@ const useWalkinStore = create((set) => ({
       set({ walkinDetails: null, error: 'Unable to fetch walk-in details.', loading: false });
     }
   },
+  submitWalkinForm: async (payload) => {
+    set({ loading: true, error: null });
+  
+    try {
+      const res = await submitWalkinForm(payload);
+      alert('Registration successful!');
+      setTimeout(() => {
+        window.location.href = '/checkout';
+      }, 1500);
+      return res;
+    } catch (error) {
+      console.error('[Walkin Form Submission Failed]:', error);
+      alert('Something went wrong. Please try again.');
+      set({ error: 'Walk-in form submission failed.' });
+      return null;
+    } finally {
+      set({ loading: false });
+    }
+  },
+  
   resetWalkinStore: () => set(initialState),
 }));
 
