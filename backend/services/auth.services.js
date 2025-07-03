@@ -25,7 +25,7 @@ exports.getUserForLogin = async (email, password, rememberMe) => {
 exports.generateToken = async (user, rememberMe) => {
     try {
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-            expiresIn: rememberMe ? '7d' : '1h',
+            expiresIn: '7d',
         });
         return token;
     } catch (error) {

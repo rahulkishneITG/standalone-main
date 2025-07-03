@@ -2,6 +2,8 @@
     display: flex;
     gap: 20px;
     align-items: flex-start;
+    width: max-content;
+    min-width: 40vw;
   }
   
   .imageWrapper {

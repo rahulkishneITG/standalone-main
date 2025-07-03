@@ -19,6 +19,7 @@ const EventSchema = new mongoose.Schema({
   pricing_walk_in: { type: mongoose.Types.Decimal128 },
   image_url: { type: String },
   shopify_product_id: { type: String },
+  shopify_product_title: { type: String},
   created_by: { type: String },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }

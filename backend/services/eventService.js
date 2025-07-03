@@ -30,6 +30,51 @@ const getPaginatedEvents = async ({ page, limit, search, sortBy, order }) => {
 
   return { events, total };
 };
+// const getPaginatedEvents = async ({ page, limit, search, sortBy, order }) => {
+//   const skip = (parseInt(page) - 1) * parseInt(limit);
+//   const sortOrder = order === 'asc' ? 1 : -1;
+
+//   const query = search
+//     ? {
+//         $or: [
+//           { name: { $regex: search, $options: 'i' } },
+//           { location: { $regex: search, $options: 'i' } },
+//           { status: { $regex: search, $options: 'i' } },
+//           { event_date: { $regex: search, $options: 'i' } }, // if string
+//           { max_capacity: { $regex: search, $options: 'i' } }, // cast to string
+//           { pre_registration_capacity: { $regex: search, $options: 'i' } },
+//           { walk_in_capacity: { $regex: search, $options: 'i' } },
+//         ],
+//       }
+//     : {};
+
+//   // 👇 Convert number fields safely to string for regex match (if needed)
+//   const transformQuery = () => {
+//     const regex = new RegExp(search, 'i');
+//     return {
+//       $or: [
+//         { name: regex },
+//         { location: regex },
+//         { status: regex },
+//         { event_date: regex },
+//         { max_capacity: { $toString: '$max_capacity' } }, // if aggregation used
+//         { pre_registration_capacity: { $toString: '$pre_registration_capacity' } },
+//         { walk_in_capacity: { $toString: '$walk_in_capacity' } },
+//       ],
+//     };
+//   };
+
+//   const [events, total] = await Promise.all([
+//     Events.find(query)
+//       .sort({ [sortBy]: sortOrder })
+//       .skip(skip)
+//       .limit(parseInt(limit))
+//       .lean(),
+//     Events.countDocuments(query),
+//   ]);
+
+//   return { events, total };
+// };
 
 
 async function countGroupMembers(attendees) {
@@ -126,6 +171,7 @@ const createEventService = async (data) => {
       pricing_walk_in = 0,
       image_url = '',
       shopify_product_id = '',
+      shopify_product_title='',
       created_by
     } = data;
 
@@ -177,6 +223,7 @@ const createEventService = async (data) => {
       pricing_walk_in,
       image_url,
       shopify_product_id,
+      shopify_product_title,
       created_by
     });
 
@@ -219,6 +266,10 @@ const updateEvent = async (updateId, data) => {
     if (!data || Object.keys(data).length === 0) {
         throw new Error('Update data is required');
     }
+
+    const now = new Date();
+    const eventDate = new Date(data.event_date);
+    data.status = now > eventDate ? 'past' : 'upcoming';
 
     const updatedEvent = await Events.findByIdAndUpdate(
         updateId,

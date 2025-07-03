@@ -9,6 +9,7 @@ const webhookRoute = require('./webhook.route.js');
 const attendeesRoute = require('./attendees.route.js');
 const userRoute = require('./user.route.js');
 const walkRoute = require('./walkin.route.js');
+const emailRoute = require('./email.route.js');
 
 router.use("/auth", authRoutes);
 
@@ -24,6 +25,6 @@ router.use("/attendees", attendeesRoute);
 
 router.use("/webhook", webhookRoute);
 
-
+router.use("/email", emailRoute);
 
 module.exports = router;

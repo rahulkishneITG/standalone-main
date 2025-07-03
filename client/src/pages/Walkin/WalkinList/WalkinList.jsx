@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Button,
   Card,
@@ -15,9 +15,10 @@ import { SortIcon } from '@shopify/polaris-icons';
 import { useNavigate } from 'react-router-dom';
 import useWalkinStore from '../../../store/walkinStore';
 import { formatDate } from '../../../utils/dateFormatter';
-import useDebounce from '../../../hooks/useDebounce'; // assuming you have this hook
+import useDebounce from '../../../hooks/useDebounce';
 import toast from 'react-hot-toast';
 import styles from './WalkinList.module.css';
+import FullPageLoader from '../../../components/Loader';
 
 const ROWS_PER_PAGE = 5;
 
@@ -27,50 +28,75 @@ const WalkinList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState(null);
+  const [isTableLoading, setIsTableLoading] = useState(false);
+  const [isFullPageLoading, setIsFullPageLoading] = useState(true);
+  const [hasMountedOnce, setHasMountedOnce] = useState(false);
 
   const navigate = useNavigate();
-  const isFirstLoad = useRef(true);
   const debouncedSearch = useDebounce(searchValue, 300);
 
   const {
     walkinList,
     totalCount,
-    loading,
     fetchWalkinList,
     deleteWalkin,
   } = useWalkinStore();
 
-  const fetchData = useCallback(() => {
-    fetchWalkinList({
-      page: currentPage,
-      limit: ROWS_PER_PAGE,
-      search: debouncedSearch,
-      sortBy: 'event_name',
-      order: sortOrder,
-    });
-  }, [currentPage, debouncedSearch, sortOrder, fetchWalkinList]);
+  const fetchData = useCallback(
+    async (type = 'full', resetPage = false) => {
+      const page = resetPage ? 1 : currentPage;
+      const setLoading = type === 'table' ? setIsTableLoading : setIsFullPageLoading;
 
+      setLoading(true);
+      await fetchWalkinList({
+        page,
+        limit: ROWS_PER_PAGE,
+        search: debouncedSearch,
+        sortBy: 'event_name',
+        order: sortOrder,
+      });
+      setLoading(false);
+
+      if (resetPage) setCurrentPage(1);
+    },
+    [currentPage, debouncedSearch, sortOrder, fetchWalkinList]
+  );
+
+  // ✅ First load = full page loader
   useEffect(() => {
-    fetchData();
-    isFirstLoad.current = false;
-  }, [fetchData]);
+    const initialLoad = async () => {
+      await fetchData('full');
+      setHasMountedOnce(true);
+    };
+    initialLoad();
+  }, []);
 
-  const handleSearchChange = (value) => {
-    setSearchValue(value);
-    setCurrentPage(1);
-  };
+  // ✅ Pagination change = table loader
+  useEffect(() => {
+    if (!hasMountedOnce) return;
+    fetchData('table');
+  }, [currentPage]);
+
+  // ✅ Search or sort = table loader + reset page
+  useEffect(() => {
+    if (!hasMountedOnce) return;
+    fetchData('table', true);
+  }, [debouncedSearch, sortOrder]);
+
+  const handleSearchChange = (value) => setSearchValue(value);
 
   const handleCancelSearch = () => {
     setSearchValue('');
-    setCurrentPage(1);
+    fetchData('table', true);
   };
 
   const handleSort = () => {
     setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-    setCurrentPage(1);
+    fetchData('table', true);
   };
+
   const handleForm = (index) => {
-    const eventId = walkinList[index].event_id;
+    const eventId = walkinList[index]._id;
     navigate(`/walkin/walkin-form/${eventId}`);
   };
 
@@ -81,36 +107,46 @@ const WalkinList = () => {
     try {
       await deleteWalkin(walkinId);
       toast.success('Walk-in deleted successfully');
-      fetchData();
+      fetchData('full');
     } catch (error) {
       toast.error('Failed to delete walk-in');
     }
   };
 
-  const paginatedRows = useMemo(() => {
-    return walkinList.map((walkin) => [
-      walkin.event_name,
-      formatDate(walkin.event_date),
-      walkin.walk_in_capacity,
-      walkin.remainingWalkInCapacity,
-      `$${walkin.pricing_walk_in}`,
-      walkin._id,
-      walkin.event_id,
-    ]);
-  }, [walkinList]);
+  const rowMarkup = isTableLoading ? (
+    <IndexTable.Row>
+      <IndexTable.Cell colSpan={6}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+          <Spinner accessibilityLabel="Loading walk-ins" size="large" />
+        </div>
+      </IndexTable.Cell>
+    </IndexTable.Row>
+  ) : (
+    walkinList.map((walkin, index) => (
+      <IndexTable.Row id={walkin._id} key={walkin._id} position={index}>
+        <IndexTable.Cell>{walkin.event_name}</IndexTable.Cell>
+        <IndexTable.Cell>{formatDate(walkin.event_date)}</IndexTable.Cell>
+        <IndexTable.Cell>{walkin.walk_in_capacity}</IndexTable.Cell>
+        <IndexTable.Cell>{walkin.remainingWalkInCapacity}</IndexTable.Cell>
+        <IndexTable.Cell>${walkin.pricing_walk_in}</IndexTable.Cell>
+        <IndexTable.Cell>
+          <div className={styles.actions}>
+            <Button variant="plain" onClick={() => handleForm(index)}>
+              Form
+            </Button>
+          </div>
+        </IndexTable.Cell>
+      </IndexTable.Row>
+    ))
+  );
 
-  const totalPages = Math.ceil(totalCount / ROWS_PER_PAGE);
+  const totalPages = Math.ceil((totalCount || 0) / ROWS_PER_PAGE);
 
-  if (loading && isFirstLoad.current) {
-    return (
-      <div className={styles.loader}>
-        <Spinner accessibilityLabel="Loading walk-ins" size="large" />
-      </div>
-    );
-  }
+  if (isFullPageLoading) return <FullPageLoader />;
 
   return (
     <div className={styles.eventList}>
+      {/* Delete Modal */}
       <Modal
         open={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
@@ -120,12 +156,10 @@ const WalkinList = () => {
           destructive: true,
           onAction: handleDeleteConfirmed,
         }}
-        secondaryActions={[
-          {
-            content: 'Cancel',
-            onAction: () => setShowDeleteModal(false),
-          },
-        ]}
+        secondaryActions={[{
+          content: 'Cancel',
+          onAction: () => setShowDeleteModal(false),
+        }]}
       >
         <Modal.Section>
           <TextContainer>
@@ -136,6 +170,7 @@ const WalkinList = () => {
 
       <Page fullWidth>
         <Card padding="0">
+          {/* Header Controls */}
           <div className={styles.headerContainer}>
             <div className={styles.searchContainer}>
               <TextField
@@ -148,15 +183,12 @@ const WalkinList = () => {
               />
             </div>
             <div className={styles.actionsContainer}>
-              <Button onClick={handleCancelSearch} variant="tertiary">
-                Cancel
-              </Button>
-              <Button onClick={handleSort} icon={<Icon source={SortIcon} />}>
-               
-              </Button>
+              <Button onClick={handleCancelSearch} variant="tertiary">Cancel</Button>
+              <Button onClick={handleSort} icon={<Icon source={SortIcon} />} />
             </div>
           </div>
 
+          {/* Table */}
           <IndexTable
             resourceName={{ singular: 'walk-in', plural: 'walk-ins' }}
             itemCount={walkinList.length}
@@ -170,43 +202,15 @@ const WalkinList = () => {
             ]}
             selectable={false}
           >
-            {loading ? (
-              <IndexTable.Row>
-                <IndexTable.Cell colSpan={6}>
-                  <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-                    <Spinner accessibilityLabel="Loading walk-ins" size="large" />
-                  </div>
-                </IndexTable.Cell>
-              </IndexTable.Row>
-            ) : (
-              walkinList.map((walkin, index) => (
-                <IndexTable.Row id={walkin._id} key={walkin._id} position={index}>
-                  <IndexTable.Cell>{walkin.event_name}</IndexTable.Cell>
-                  <IndexTable.Cell>{formatDate(walkin.event_date)}</IndexTable.Cell>
-                  <IndexTable.Cell>{walkin.walk_in_capacity}</IndexTable.Cell>
-                  <IndexTable.Cell>{walkin.remainingWalkInCapacity}</IndexTable.Cell>
-                  <IndexTable.Cell>${walkin.pricing_walk_in}</IndexTable.Cell>
-                  <IndexTable.Cell>
-                    <div className={styles.actions}>
-                      <Button variant="plain" onClick={() => handleForm(index)}>
-                        Form
-                      </Button>
-                      {/* Uncomment below if delete needed */}
-                      {/* <Button variant="destructive" onClick={() => handleDelete(index)}>
-                        Delete
-                      </Button> */}
-                    </div>
-                  </IndexTable.Cell>
-                </IndexTable.Row>
-              ))
-            )}
+            {rowMarkup}
           </IndexTable>
 
+          {/* Pagination */}
           <div className={styles.paginationContainer}>
             <Pagination
               hasPrevious={currentPage > 1}
-              hasNext={currentPage < totalPages}
               onPrevious={() => setCurrentPage((p) => p - 1)}
+              hasNext={currentPage < totalPages}
               onNext={() => setCurrentPage((p) => p + 1)}
             />
           </div>

@@ -22,6 +22,7 @@ import SettingsPage from './pages/Settings/SettingsPage';
 import Walkin from './pages/Walkin/Walkin';
 import WalkinForm from './pages/Walkin/WalkinForm/WalkinForm';
 import WalkinList from './pages/Walkin/WalkinList/WalkinList';
+import Email from './pages/Emails/Email';
 
 function AppWrapper() {
   const { loading } = useLoader();
@@ -65,9 +66,10 @@ function AppWrapper() {
                   <Route path="settings" element={<SettingsPage />} /> 
                   <Route path="walkin" element={<Walkin />}>
                     <Route index element={<WalkinList />} />
-                    <Route path="walkin-form/:id" element={<WalkinForm />} />
+                    <Route path="walkin-form/:walkinId" element={<WalkinForm />} />
                     <Route path="edit/:id" element={<EditEvent />} />
                   </Route> 
+                  <Route path="email" element={<Email />} /> 
                 </Route>
                 <Route path="*" element={<PageNotFound />} />
               </Routes>

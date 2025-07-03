@@ -7,14 +7,14 @@ import {
   DropZone,
   Text,
 } from '@shopify/polaris';
-import { useCallback, useState, useEffect, useContext } from 'react';
+import { useCallback, useState, useEffect, useContext, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import useEventStore from '../../../store/CreateEventStore.js';
 import ProductSearch from './ProductSearch';
 import SwitchCheckbox from './SwitchCheckbox.jsx';
 import validateEventForm from '../../../utils/validateForm.js';
 import { AuthContext } from '../../../context/AuthContext';
-import { createEvent } from '../../../api/eventApi.js';
+import { createEvent, UpdateEditEventData } from '../../../api/eventApi.js';
 import toast from 'react-hot-toast';
 
 const CreateEventForm = ({ eventdata = {} }) => {
@@ -24,6 +24,7 @@ const CreateEventForm = ({ eventdata = {} }) => {
   const [touchedFields, setTouchedFields] = useState({});
   const location = useLocation();
   const { user } = useContext(AuthContext);
+  const productInputRef = useRef();
 
   useEffect(() => {
     const isCreate = location.pathname.includes('/event/create');
@@ -47,6 +48,7 @@ const CreateEventForm = ({ eventdata = {} }) => {
         pricing_walk_in = { $numberDecimal: '' },
         shopify_product_id = '',
         walk_in_capacity = '',
+        shopify_product_title = '',
       } = eventdata;
 
       setMultipleFields({
@@ -62,7 +64,14 @@ const CreateEventForm = ({ eventdata = {} }) => {
         prePrice: pricing_pre_registration?.$numberDecimal || '',
         walkInPrice: pricing_walk_in?.$numberDecimal || '',
         shopifyProductId: shopify_product_id,
+        shopifyProductName: shopify_product_title,
       });
+      if (productInputRef.current && shopify_product_id && shopify_product_title) {
+        productInputRef.current.setSelectedProductManually({
+          label: shopify_product_title,
+          value: shopify_product_id.replace('gid://shopify/Product/', ''), // assuming you save it like that
+        });
+      }
     }
   }, [eventdata, location.pathname]);
 
@@ -78,61 +87,16 @@ const CreateEventForm = ({ eventdata = {} }) => {
 
   const handleDrop = useCallback((files, accepted) => setFile(accepted[0]), []);
 
-  // const handleSubmit = () => {
-  //   const validationErrors = validateEventForm(eventData);
-  //   setErrors(validationErrors);
-  //   setTouchedFields(
-  //     Object.keys(eventData).reduce((acc, key) => {
-  //       acc[key] = true;
-  //       return acc;
-  //     }, {})
-  //   );
-
-  //   if (Object.keys(validationErrors).length > 0) return;
-
-  //   const [eventDate, eventTime] = eventData.dateTime?.split('T') || [];
-
-  //   const finalPayload = {
-  //     name: eventData.name,
-  //     status: '',
-  //     draftStatus: true,
-  //     event_date: eventDate || '',
-  //     event_time: eventTime || '',
-  //     location: eventData.location,
-  //     max_capacity: parseInt(eventData.maxCapacity, 10),
-  //     walk_in_capacity: parseInt(eventData.walkInSlot, 10),
-  //     pre_registration_capacity: 0,
-  //     pre_registration_start: '',
-  //     pre_registration_end: eventData.closingDate,
-  //     description: eventData.description,
-  //     allow_group_registration: eventData.groupRegistration,
-  //     enable_marketing_email: eventData.collectEmails,
-  //     pricing_pre_registration: parseFloat(eventData.prePrice),
-  //     pricing_walk_in: parseFloat(eventData.walkInPrice),
-  //     image_url: '',
-  //     shopify_product_id: `gid://shopify/Product/${eventData.shopifyProductId}`,
-  //     created_by: user?._id || '',
-  //   };
-
-  //   console.log('✅ Final Payload:', finalPayload);
-  // };
-   const handleSubmit = async () => {
+  const handleSubmit = async () => {
     const validationErrors = validateEventForm(eventData);
     setErrors(validationErrors);
-  
+
     const allFields = [
-      'name',
-      'dateTime',
-      'location',
-      'maxCapacity',
-      'walkInSlot',
-      'closingDate',
-      'description',
-      'prePrice',
-      'walkInPrice',
-      'shopifyProductId',
+      'name', 'dateTime', 'location', 'maxCapacity', 'walkInSlot',
+      'closingDate', 'description', 'prePrice', 'walkInPrice',
+      'shopifyProductId', 'shopifyProductName',
     ];
-  
+
     setTouchedFields((prev) => ({
       ...prev,
       ...allFields.reduce((acc, field) => {
@@ -140,11 +104,11 @@ const CreateEventForm = ({ eventdata = {} }) => {
         return acc;
       }, {}),
     }));
-  
+
     if (Object.keys(validationErrors).length > 0) return;
-  
+
     const [eventDate, eventTime] = eventData.dateTime?.split('T') || [];
-  
+
     const finalPayload = {
       name: eventData.name,
       status: '',
@@ -164,21 +128,36 @@ const CreateEventForm = ({ eventdata = {} }) => {
       pricing_walk_in: parseFloat(eventData.walkInPrice),
       image_url: '',
       shopify_product_id: `gid://shopify/Product/${eventData.shopifyProductId}`,
+      shopify_product_title: eventData.shopifyProductName,
       created_by: user?._id || '',
     };
-  
-    console.log('Final Payload:', finalPayload);
+
     try {
-      const response = await createEvent(finalPayload);
-      console.log('Event Created:', response);
-      resetEventForm(); 
-      toast.success("Event created successfully!");
+      const isEdit = location.pathname.includes('/event/edit');
+      let response;
+      console.log(eventdata?._id);
+      if (isEdit && eventdata?._id) {
+        response = await UpdateEditEventData(eventdata?._id,finalPayload);
+        toast.success('Event updated successfully!');
+      } else {
+        response = await createEvent(finalPayload);
+        toast.success('Event created successfully!');
+        resetEventForm();
+        if (productInputRef.current) {
+          productInputRef.current.clear();
+        }
+      }
+  
+      console.log('Response:', response);
+  
+      
+     
     } catch (error) {
       console.error('API Error:', error);
-        toast.error("Failed to create event");
+      toast.error("Failed to save event");
     }
   };
-  
+
   return (
     <Layout>
       <div style={{ display: 'flex', gap: '16px', marginBlock: '24px', alignItems: 'stretch' }}>
@@ -192,10 +171,11 @@ const CreateEventForm = ({ eventdata = {} }) => {
             <FormLayout>
               <div style={{ position: 'relative', zIndex: 50 }}>
                 <ProductSearch
+                  ref={productInputRef}
                   error={touchedFields.shopifyProductId ? errors.shopifyProductId : undefined}
                   onProductSelect={(product) => {
                     setField('shopifyProductId', product.value);
-                    setField('productHandle', product.label);
+                    setField('shopifyProductName', product.label);
                     setTouchedFields((prev) => ({ ...prev, shopifyProductId: true }));
                     setErrors((prevErrors) => ({ ...prevErrors, shopifyProductId: undefined }));
                   }}
@@ -223,7 +203,6 @@ const CreateEventForm = ({ eventdata = {} }) => {
                   error={touchedFields.location ? errors.location : undefined}
                 />
               </FormLayout.Group>
-
               <FormLayout.Group condensed>
                 <TextField
                   label="Max Capacity"
@@ -248,7 +227,6 @@ const CreateEventForm = ({ eventdata = {} }) => {
                   error={touchedFields.closingDate ? errors.closingDate : undefined}
                 />
               </FormLayout.Group>
-
               <TextField
                 label="Event Description"
                 value={eventData.description}
@@ -256,13 +234,11 @@ const CreateEventForm = ({ eventdata = {} }) => {
                 multiline={4}
                 error={touchedFields.description ? errors.description : undefined}
               />
-
               <SwitchCheckbox
                 label="Group Registration"
                 checked={eventData.groupRegistration}
                 onChange={(val) => setField('groupRegistration', val)}
               />
-
               <SwitchCheckbox
                 label="Collect Emails for Future Marketing"
                 checked={eventData.collectEmails}
@@ -270,7 +246,6 @@ const CreateEventForm = ({ eventdata = {} }) => {
               />
             </FormLayout>
           </Card>
-
           <div style={{ marginTop: '1rem', textAlign: 'start' }}>
             <Button primary onClick={handleSubmit}>Submit</Button>
           </div>
@@ -278,9 +253,6 @@ const CreateEventForm = ({ eventdata = {} }) => {
 
         <div style={{ flex: '0 0 30%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <Card title="Ticket Pricing">
-            <div style={{ marginBottom: '16px' }}>
-              <Text variant="headingMd" as="h2">Ticket Pricing</Text>
-            </div>
             <FormLayout>
               <TextField
                 label="Pre-registration Price"
@@ -290,7 +262,6 @@ const CreateEventForm = ({ eventdata = {} }) => {
                 onChange={handleChange('prePrice')}
                 error={touchedFields.prePrice ? errors.prePrice : undefined}
               />
-
               <TextField
                 label="Walk-in Price"
                 prefix="$"

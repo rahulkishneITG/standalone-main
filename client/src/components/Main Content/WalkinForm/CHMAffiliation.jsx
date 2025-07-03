@@ -1,26 +1,36 @@
 import { Select, TextField } from '@shopify/polaris';
 
-export default function CHMAffiliation({ isCHM, setIsCHM }) {
-  return (
-    <>
-      <Select
-        label="Are you a current patient at CHM?"
-        name="is_chm_patient"
-        options={[
-          { label: 'Select', value: '' },
-          { label: 'Yes', value: 'yes' },
-          { label: 'No', value: 'no' },
-        ]}
-        value={isCHM}
-        onChange={setIsCHM}
+const CHMAffiliation = ({ isCHM, setIsCHM, providerName, setProviderName, errors, setErrors }) => (
+  <>
+    <Select
+      label="Are you a current patient at CHM?"
+      options={[
+        { label: 'Select', value: '' },
+        { label: 'Yes', value: 'yes' },
+        { label: 'No', value: 'no' },
+      ]}
+      value={isCHM}
+      onChange={(val) => {
+        setIsCHM(val);
+        if (errors.isCHM) setErrors(prev => ({ ...prev, isCHM: undefined }));
+        if (val !== 'yes' && errors.provider_name) {
+          setErrors(prev => ({ ...prev, provider_name: undefined }));
+        }
+      }}
+      error={errors.isCHM}
+    />
+    {isCHM === 'yes' && (
+      <TextField
+        label="Provider Name"
+        value={providerName}
+        onChange={(val) => {
+          setProviderName(val);
+          if (errors.provider_name) setErrors(prev => ({ ...prev, provider_name: undefined }));
+        }}
+        error={errors.provider_name}
       />
-      {isCHM === 'yes' && (
-        <TextField
-          label="Provider Name"
-          name="provider_name"
-          autoComplete="off"
-        />
-      )}
-    </>
-  );
-}
+    )}
+  </>
+);
+
+export default CHMAffiliation;

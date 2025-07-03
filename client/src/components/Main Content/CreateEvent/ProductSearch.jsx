@@ -1,9 +1,15 @@
-import { Autocomplete, Icon, Spinner, Text } from '@shopify/polaris';
+import { Autocomplete, Icon, Spinner } from '@shopify/polaris';
 import { SearchIcon } from '@shopify/polaris-icons';
-import { useState, useCallback, useEffect } from 'react';
+import {
+  useState,
+  useCallback,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
 import useProductStore from '../../../store/productStore.js';
 
-export default function ProductSearch({ error, onProductSelect }) {
+const ProductSearch = forwardRef(({ error, onProductSelect }, ref) => {
   const [inputValue, setInputValue] = useState('');
   const [selectedOptions, setSelectedOptions] = useState([]);
 
@@ -14,18 +20,31 @@ export default function ProductSearch({ error, onProductSelect }) {
     setSelectedProduct,
   } = useProductStore();
 
+
+  useImperativeHandle(ref, () => ({
+    clear: () => {
+      setInputValue('');
+      setSelectedOptions([]);
+      setSelectedProduct(null);
+    },
+    setSelectedProductManually: (product) => {
+      setInputValue(product.label);
+      setSelectedOptions([product.value]);
+      setSelectedProduct(product);
+    },
+  }));
+
   useEffect(() => {
     const delay = setTimeout(() => {
       if (inputValue.length >= 2) {
         searchProducts(inputValue);
       }
     }, 300);
-
     return () => clearTimeout(delay);
   }, [inputValue]);
 
-  const updateText = useCallback((value) => {
-    setInputValue(value);
+  const updateText = useCallback((val) => {
+    setInputValue(val);
   }, []);
 
   const updateSelection = useCallback(
@@ -50,21 +69,20 @@ export default function ProductSearch({ error, onProductSelect }) {
       prefix={loading ? <Spinner size="small" /> : <Icon source={SearchIcon} tone="base" />}
       placeholder="Search by name or SKU"
       autoComplete="off"
-      name='Product is required'
       error={error}
+      clearButton
+      onClearButtonClick={() => {
+        setInputValue('');
+        setSelectedOptions([]);
+        setSelectedProduct(null);
+      }}
     />
   );
-
-  const optionsSection = [
-    {
-      options: searchResults,
-    },
-  ];
 
   return (
     <div style={{ height: 'auto' }}>
       <Autocomplete
-        options={optionsSection}
+        options={[{ options: searchResults }]}
         selected={selectedOptions}
         onSelect={updateSelection}
         textField={textField}
@@ -73,4 +91,6 @@ export default function ProductSearch({ error, onProductSelect }) {
       />
     </div>
   );
-}
+});
+
+export default ProductSearch;

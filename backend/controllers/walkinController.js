@@ -1,4 +1,5 @@
 const walk = require('../models/walk_in.model.js');
+const { getWalkinWithEventDetails } = require('../services/walkin.services.js');
 
 exports.walkinList = async (req, res) => {
     const {
@@ -33,7 +34,16 @@ exports.walkinList = async (req, res) => {
   };
   
 
-exports.walkInData = async (req,res) => {
-    const walkinID = req.param;
-    console.log('walkinId',walkinID);
-}
+  exports.walkInData = async (req, res) => {
+    const walkinID = req.params.walkinId;
+
+    try {
+      const result = await getWalkinWithEventDetails(walkinID);
+      console.log('Fetched walkin details:', result);
+      res.status(200).json({ data: result });
+    } catch (error) {
+      console.error('Error fetching walk-in data:', error.message);
+      const status = error.message === 'Walk-in not found' ? 404 : 500;
+      res.status(status).json({ message: error.message });
+    }
+  };

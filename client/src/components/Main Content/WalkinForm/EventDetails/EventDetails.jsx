@@ -7,12 +7,12 @@ export default function EventDetails({ event }) {
     <Card>
       <div className={styles.container}>
         <div className={styles.imageWrapper}>
-          <Image source={event.imageUrl} alt={event.name} />
+            <Image source={event?.imageUrl || ''} alt={event?.title || ''} />
         </div>
         <div className={styles.info}>
-          <Text variant="headingLg">{event.name}</Text>
-          <Text>{event.description}</Text>
-          <Text fontWeight="bold">Price: ${event.walkinPrice}</Text>
+          <Text variant="headingLg">{event?.title}</Text>
+          <Text>{event?.description}</Text>
+          <Text fontWeight="bold">Price: ${event?.walkin_price}</Text>
           <WalkinFormComponent />
         </div>
       </div>

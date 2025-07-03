@@ -28,6 +28,10 @@ const eventSchema = new mongoose.Schema({
     required: true,
     unique: true, // ensure one product = one event
   },
+  shopifyProductName:{
+    type: String,
+    required: true,
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Admin",

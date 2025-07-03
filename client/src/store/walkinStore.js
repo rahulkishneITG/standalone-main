@@ -1,8 +1,10 @@
 import { create } from 'zustand';
-import { getWalkinList } from '../api/walkinApi';
+import { getWalkinList, getWalkinById } from '../api/walkinApi';
 
 const initialState = {
-  walkinList: [],   // ✅ renamed
+  walkinList: [], 
+  walkinDetails: null,
+  eventDetails: null,
   totalCount: 0,
   loading: false,
   error: null,
@@ -24,7 +26,7 @@ const useWalkinStore = create((set) => ({
       const res = await getWalkinList({ page, limit, search, sortBy, order });
 
       set({
-        walkinList: res.data || [], // ✅ use correct key here
+        walkinList: res.data || [], 
         totalCount: res.total || 0,
         loading: false,
       });
@@ -38,7 +40,18 @@ const useWalkinStore = create((set) => ({
       });
     }
   },
+  fetchWalkinById: async (id) => {
+    set({ loading: true, error: null });
 
+    try {
+      const res = await getWalkinById(id);
+      console.log('Fetched walkin details:', res.data);
+      set({ walkinDetails: res.data || null, eventDetails: res.data?.event_details || null, loading: false });
+    } catch (error) {
+      console.error('[Fetch Walkin by ID Failed]:', error);
+      set({ walkinDetails: null, error: 'Unable to fetch walk-in details.', loading: false });
+    }
+  },
   resetWalkinStore: () => set(initialState),
 }));
 
