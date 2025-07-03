@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getEditEventData } from '../api/eventApi.js';
+import { getEditEventData, UpdateEditEventData } from '../api/eventApi.js';
 
 const EditEventStore = create((set) => ({
     eventData: null,
@@ -11,6 +11,17 @@ const EditEventStore = create((set) => ({
         set({ loading: true, error: null });
         try {
             const data = await getEditEventData(eventId);
+            set({ eventData: data, loading: false });
+        } catch (error) {
+            console.error('[Dashboard Fetch Error]:', error);
+            set({ error: 'Failed to fetch data', loading: false });
+        }
+    },
+    updatedEventDataById: async (eventId) => {
+
+        set({ loading: true, error: null });
+        try {
+            const data = await UpdateEditEventData(eventId);
             set({ eventData: data, loading: false });
         } catch (error) {
             console.error('[Dashboard Fetch Error]:', error);

@@ -1,3 +1,8 @@
 .Polaris-TextField--focus .Polaris-TextField__Spinner, .Polaris-TextField:hover .Polaris-TextField__Spinner {
     visibility: hidden !important; 
 }
+
+.Polaris-Autocomplete-Autocomplete__OptionsList {
+    max-height: 100px !important; 
+    overflow-y: auto !important;
+  }

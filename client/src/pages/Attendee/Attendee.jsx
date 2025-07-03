@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Page,
   Card,
@@ -13,13 +13,16 @@ import {
 import { SortIcon } from '@shopify/polaris-icons';
 import AttendeeTable from '../../components/Main Content/Table/AttendeeTable';
 import { useAttendeeStore } from '../../store/attendeeStore.js';
-
+import FullPageLoader from '../../components/Loader.jsx';
 
 const AttendeePage = () => {
+  const [isFullPageLoading, setIsFullPageLoading] = useState(true);
+  const [isTableLoading, setIsTableLoading] = useState(false);
+  const [hasMountedOnce, setHasMountedOnce] = useState(false);
+
   const {
     attendees,
     totalAttendees,
-    loading,
     query,
     registrationType,
     paidStatus,
@@ -36,9 +39,25 @@ const AttendeePage = () => {
     setPage,
     clearAll,
   } = useAttendeeStore();
-  console.log('attendees', attendees);
+
   useEffect(() => {
-    fetchAttendees();
+    const loadInitialData = async () => {
+      setIsFullPageLoading(true);
+      await fetchAttendees();
+      setIsFullPageLoading(false);
+      setHasMountedOnce(true);
+    };
+
+    loadInitialData();
+  }, []);
+
+  useEffect(() => {
+    if (!hasMountedOnce) return;
+
+    setIsTableLoading(true);
+    fetchAttendees().finally(() => {
+      setIsTableLoading(false);
+    });
   }, [query, registrationType, paidStatus, registeredDate, sortDirection, currentPage]);
 
   const appliedFilters = [
@@ -108,11 +127,22 @@ const AttendeePage = () => {
     },
   ];
 
+  if (isFullPageLoading) return <FullPageLoader />;
+
   return (
     <Page fullWidth>
       <Card padding="0">
         <div style={{ padding: '0px' }}>
-          <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',paddingRight: '10px',borderBottom: '1px solid #E0E0E0' }}>
+          <div
+            style={{
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingRight: '10px',
+              borderBottom: '1px solid #E0E0E0',
+            }}
+          >
             <div style={{ width: '95%' }}>
               <Filters
                 queryValue={query}
@@ -125,8 +155,9 @@ const AttendeePage = () => {
                 disableFilters
               />
             </div>
-            <Button onClick={setSortDirection} icon={<Icon source={SortIcon} tone="base"/>} />
+            <Button onClick={setSortDirection} icon={<Icon source={SortIcon} tone="base" />} />
           </div>
+
           <div style={{ marginTop: '0rem' }}>
             <Filters
               queryValue=""
@@ -140,7 +171,7 @@ const AttendeePage = () => {
           </div>
         </div>
 
-        {loading ? (
+        {isTableLoading ? (
           <div style={{ textAlign: 'center', padding: '2rem' }}>
             <Spinner accessibilityLabel="Loading attendees" size="large" />
           </div>
@@ -149,7 +180,15 @@ const AttendeePage = () => {
         )}
 
         {totalAttendees > itemsPerPage && (
-          <div style={{display: 'flex', justifyContent: 'center',padding: "6px",backgroundColor: "#F7F7F7",borderTop: "1px solid #E0E0E0"}}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              padding: '6px',
+              backgroundColor: '#F7F7F7',
+              borderTop: '1px solid #E0E0E0',
+            }}
+          >
             <Pagination
               hasPrevious={currentPage > 1}
               onPrevious={() => setPage(currentPage - 1)}

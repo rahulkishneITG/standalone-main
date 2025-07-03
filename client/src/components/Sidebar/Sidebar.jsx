@@ -17,7 +17,7 @@ const Sidebar = () => {
     { path: '/event', label: 'Events', icon: CalendarIcon },
     { path: '/attendee', label: 'Attendees', icon: PersonIcon },
     { path: '/email', label: 'Emails', icon: EmailIcon },
-    { path: '/walk-in', label: 'Walk-ins', icon: ProductIcon },
+    { path: '/walkin', label: 'Walk-ins', icon: ProductIcon },
   ];
 
   const bottomNavItems = [

@@ -104,7 +104,7 @@ const createAttendeeService = async (data) => {
     let type = 'Individual';
 
     // const event_id = data.event_id;
-    const event_id = "685d0d498038b810c2739105";
+    const event_id = "6862686d5d6763ec03d5ebb5";
 
     const countWalkInAttendees = async () => {
       try {

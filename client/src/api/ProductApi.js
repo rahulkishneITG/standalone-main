@@ -1,8 +1,13 @@
-export const searchProducts = async (query) => {
-    // Replace with actual API
-    return [
-      { id: '1', title: 'Product A' },
-      { id: '2', title: 'Product B' },
-      { id: '3', title: 'Product C' },
-    ].filter((item) => item.title.toLowerCase().includes(query.toLowerCase()));
-  };
+import axios from 'axios';
+const BASE_URL = `${process.env.REACT_APP_BASE_URL}api/event`;
+const getAuthHeaders = () => ({
+  Authorization: `Bearer ${localStorage.getItem('token')}`,
+});
+
+export const fetchShopifyProducts = async (search) => {
+  const res = await axios.get(`${BASE_URL}/syncproduct?q=${search}`,{
+    headers: getAuthHeaders(),
+  });
+  console.log(res.data.products)
+  return res.data.products 
+};

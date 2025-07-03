@@ -28,6 +28,9 @@ const Header = () => {
     if (path.startsWith('/event/edit')) return 'Edit Event';
     if (path.startsWith('/event')) return 'All Event';
     if (path.startsWith('/attendee')) return 'All Attendee';
+    if (path.startsWith('/walkin')) return 'Walkin';
+    if (path.startsWith('/email')) return 'Emails';
+    if (path.startsWith('/walkin/walkin-form')) return 'Walkin Form';
 
     return 'Dashboard';
   };
@@ -93,11 +96,17 @@ const Header = () => {
         <div className={styles.headerBottom}>
           <Text variant="headingLg" as="h2" fontWeight="semibold">
             <div className={styles.headerBottomTitle}>
-              {(location.pathname.startsWith('/event/create') || location.pathname.startsWith('/event/edit')) && (
-                <div className={styles.backButton} onClick={() => navigate('/event')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Icon source={ArrowLeftIcon} tone="base" />
-                </div>
-              )}
+              {(location.pathname.startsWith('/event/create') || location.pathname.startsWith('/event/edit') ||
+                location.pathname.startsWith('/walkin/walkin-form')) && (
+                  <div className={styles.backButton} onClick={() => {if (location.pathname.startsWith('/walkin/walkin-form')) {
+                    navigate('/walkin');
+                  } else {
+                    navigate('/event');
+                  }}
+                  } style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Icon source={ArrowLeftIcon} tone="base" />
+                  </div>
+                )}
               {getPageTitle()}
             </div>
           </Text>

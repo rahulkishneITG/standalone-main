@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { updateUserPassword } from '../api/userApi';
+import { getUserProfile, updateUserProfile, updateUserPassword } from '../api/userApi';
 
-const useUserSettingsStore = create((set) => ({
+export const useUserSettingsStore = create((set) => ({
   passwordLoading: false,
   passwordMessage: '',
   setPasswordMessage: (msg) => set({ passwordMessage: msg }),
@@ -23,4 +23,46 @@ const useUserSettingsStore = create((set) => ({
   },
 }));
 
-export default useUserSettingsStore;
+export const useUserProfileStore = create((set) => ({
+  userProfile: null,
+  profileLoading: false,
+  profileMessage: '',
+  updateSuccess: false,
+
+  setProfileMessage: (msg) => set({ profileMessage: msg }),
+
+  fetchUserProfile: async () => {
+    set({ profileLoading: true, profileMessage: '', updateSuccess: false });
+    try {
+      const data = await getUserProfile();
+      set({ userProfile: data });
+    } catch (err) {
+      set({
+        profileMessage:
+          err.response?.data?.message || err.message || 'Something went wrong while fetching profile',
+      });
+    } finally {
+      set({ profileLoading: false });
+    }
+  },
+
+  updateUserProfile: async (payload) => {
+    set({ profileLoading: true, profileMessage: '', updateSuccess: false });
+    try {
+      const res = await updateUserProfile(payload);
+      set({
+        userProfile: res.data || payload,
+        profileMessage: res.message || 'Profile updated successfully.',
+        updateSuccess: true,
+      });
+    } catch (err) {
+      set({
+        profileMessage:
+          err.response?.data?.message || err.message || 'Something went wrong while updating profile',
+        updateSuccess: false,
+      });
+    } finally {
+      set({ profileLoading: false });
+    }
+  },
+}));
