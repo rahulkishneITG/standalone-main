@@ -103,27 +103,37 @@ const createAttendeeService = async (data) => {
     let savedEventGroup = null;
     let type = 'Individual';
 
-    // const event_id = data.event_id;
-    const event_id = "6862686d5d6763ec03d5ebb5";
+    const event_id = data.event_id;
+    // const event_id = "6862686d5d6763ec03d5ebb5";
 
     const countWalkInAttendees = async () => {
       try {
         if (!event_id) {
           throw new Error('Event ID is required');
         }
+
+        console.log('countWalkInAttendees',countWalkInAttendees);
+
+        // Count current walk-in attendees for the event
         const walkInCount = await Attendee.countDocuments({
           event_id: event_id,
           registration_as: "walk-in"
         });
 
+        console.log('walkInCount',walkInCount);
+
+        // Get existing walk-in capacity record
         const walkInRecord = await Walk_in.findOne({ event_id: event_id });
         if (!walkInRecord) {
           throw new Error(`Walk-in capacity record not found for event ${event_id}`);
         }
-        const capacity = walkInRecord.walk_in_capacity || 0; // Ensure field exists
-      
+
+        const capacity = walkInRecord.walk_in_capacity || 0;
+
+        // Calculate remaining capacity
         const remainingWalkInCapacity = Math.max(0, capacity - walkInCount);
-      
+
+        // ❗ FIXED LINE: Assign to a variable
         const updatedWalkInRecord = await Walk_in.findOneAndUpdate(
           { event_id: event_id },
           {
@@ -152,6 +162,7 @@ const createAttendeeService = async (data) => {
         throw error;
       }
     };
+
 
     countWalkInAttendees();
 

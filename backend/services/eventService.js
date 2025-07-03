@@ -26,55 +26,11 @@ const getPaginatedEvents = async ({ page, limit, search, sortBy, order }) => {
     Events.countDocuments(query),
   ]);
 
-  console.log('Event', Events);
+ 
 
   return { events, total };
 };
-// const getPaginatedEvents = async ({ page, limit, search, sortBy, order }) => {
-//   const skip = (parseInt(page) - 1) * parseInt(limit);
-//   const sortOrder = order === 'asc' ? 1 : -1;
 
-//   const query = search
-//     ? {
-//         $or: [
-//           { name: { $regex: search, $options: 'i' } },
-//           { location: { $regex: search, $options: 'i' } },
-//           { status: { $regex: search, $options: 'i' } },
-//           { event_date: { $regex: search, $options: 'i' } }, // if string
-//           { max_capacity: { $regex: search, $options: 'i' } }, // cast to string
-//           { pre_registration_capacity: { $regex: search, $options: 'i' } },
-//           { walk_in_capacity: { $regex: search, $options: 'i' } },
-//         ],
-//       }
-//     : {};
-
-//   // 👇 Convert number fields safely to string for regex match (if needed)
-//   const transformQuery = () => {
-//     const regex = new RegExp(search, 'i');
-//     return {
-//       $or: [
-//         { name: regex },
-//         { location: regex },
-//         { status: regex },
-//         { event_date: regex },
-//         { max_capacity: { $toString: '$max_capacity' } }, // if aggregation used
-//         { pre_registration_capacity: { $toString: '$pre_registration_capacity' } },
-//         { walk_in_capacity: { $toString: '$walk_in_capacity' } },
-//       ],
-//     };
-//   };
-
-//   const [events, total] = await Promise.all([
-//     Events.find(query)
-//       .sort({ [sortBy]: sortOrder })
-//       .skip(skip)
-//       .limit(parseInt(limit))
-//       .lean(),
-//     Events.countDocuments(query),
-//   ]);
-
-//   return { events, total };
-// };
 
 
 async function countGroupMembers(attendees) {
@@ -145,7 +101,7 @@ async function getEventCountData() {
       TotalRevenu: totalPrice
     };
   } catch (error) {
-    console.error('Error in getEventCountData:', error.message);
+ 
     throw new Error('Failed to fetch event count data');
   }
 }
@@ -241,6 +197,7 @@ const createEventService = async (data) => {
         event_name: event.name,
         event_date: event.event_date,
         walk_in_capacity: event.walk_in_capacity,
+        remainingWalkInCapacity:event.walk_in_capacity,
         pricing_walk_in: event.pricing_walk_in
       });
 
@@ -249,7 +206,7 @@ const createEventService = async (data) => {
 
     return { event };
   } catch (err) {
-    console.error('Service error:', err);
+
     throw err;
   }
 };
