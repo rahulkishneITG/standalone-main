@@ -16,8 +16,15 @@ const groupregistre = require('./seed/groupregisterseed.js')
 
 dotenv.config();
 const allowedOrigins = {
-  development: 'http://localhost:3000',
-  production: 'https://standalone-main.vercel.app',
+  development: [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://store.centerforholisticmedicine.com',
+  ],
+  production: [
+    'https://standalone-main.vercel.app',
+    'https://store.centerforholisticmedicine.com'
+  ],
 };
 // Setup middlewares
 app.use(express.json());

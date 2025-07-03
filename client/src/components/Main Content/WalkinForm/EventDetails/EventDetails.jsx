@@ -2,7 +2,7 @@ import { Card, Text, Image, BlockStack } from '@shopify/polaris';
 import styles from './EventDetails.module.css';
 import WalkinFormComponent from '../WalkinFormComponent';
 
-export default function EventDetails({ event }) {
+export default function EventDetails({ event, event_id }) {
   return (
     <Card>
       <div className={styles.container}>
@@ -13,7 +13,7 @@ export default function EventDetails({ event }) {
           <Text variant="headingLg">{event?.title}</Text>
           <Text>{event?.description}</Text>
           <Text fontWeight="bold">Price: ${event?.walkin_price}</Text>
-          <WalkinFormComponent />
+          <WalkinFormComponent event_id={event_id} />
         </div>
       </div>
     </Card>

@@ -241,6 +241,7 @@ const createEventService = async (data) => {
         event_name: event.name,
         event_date: event.event_date,
         walk_in_capacity: event.walk_in_capacity,
+        remainingWalkInCapacity:event.walk_in_capacity,
         pricing_walk_in: event.pricing_walk_in
       });
 
