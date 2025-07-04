@@ -121,7 +121,7 @@ const useEventStore = create((set) => ({
   fetchEventDetails: async (event_id) => {
     set({ loading: true, error: null });
     try {
-      const { data } = await axios.post(`http://localhost:5000/api/event/eventDetails`, {
+      const { data } = await axios.post(`https://standalone-main-server.vercel.app/api/event/eventDetails`, {
         id: event_id,
       });
       set({ eventDetails: data, loading: false });
