@@ -23,6 +23,7 @@
     "mongoose": "^8.15.1",
     "multer": "^2.0.1",
     "node-cache": "^5.1.2",
+    "node-fetch": "^3.3.2",
     "react-scripts": "^5.0.1"
   },
   "devDependencies": {

@@ -97,150 +97,17 @@ const getAttendeeList = async (queryParams = {}) => {
   };
 };
 
-// const createAttendeeService = async (data) => {
-//   try {
-//     const additionalGuestsLength = data?.additional_guests?.length || 0;
-//     let savedEventGroup = null;
-//     let type = 'Individual';
-
-//     const event_id = data.event_id;
-//     // const event_id = "6862686d5d6763ec03d5ebb5";
-
-//     const countWalkInAttendees = async () => {
-//       try {
-//         if (!event_id) {
-//           throw new Error('Event ID is required');
-//         }
-//         console.log('event_id',event_id);
-
-//         const walkInCount = await Attendee.countDocuments({
-//           event_id: event_id,
-//           registration_as: "walkin"
-//         });
-
-//         console.log("walkInCount1",walkInCount);
-
-//         const walkInRecord = await Walk_in.findOne({ event_id: event_id });
-//         if (!walkInRecord) {
-//           throw new Error(`Walk-in capacity record not found for event ${event_id}`);
-//         }
-//         const capacity = walkInRecord.walk_in_capacity || 0; // Ensure field exists
-      
-//         const remainingWalkInCapacity = Math.max(0, capacity - walkInCount);
-//         console.log("remainingWalkInCapacity",remainingWalkInCapacity);
-      
-//         const updatedWalkInRecord = await Walk_in.findOneAndUpdate(
-//           { event_id: event_id },
-//           {
-//             $set: {
-//               walk_in_capacity: capacity,
-//               remainingWalkInCapacity: remainingWalkInCapacity,
-//               updatedAt: new Date()
-//             }
-//           },
-//           {
-//             upsert: true,
-//             new: true,
-//             setDefaultsOnInsert: true
-//           }
-//         );
-
-//         console.log("updatedWalkInRecord",updatedWalkInRecord);
-
-//         return {
-//           event_id,
-//           walkInCount,
-//           walkInCapacity: capacity,
-//           remainingWalkInCapacity,
-//           walkInRecord: updatedWalkInRecord
-//         };
-//       } catch (error) {
-//         console.error('Error processing walk-in data:', error);
-//         throw error;
-//       }
-//     };
-
-//     countWalkInAttendees();
-
-//     if (additionalGuestsLength > 0) {
-//       type = 'Group';
-//       const groupMemberDetails = data.additional_guests.map(guest => ({
-//         name: `${guest.first_name || ''} ${guest.last_name || ''}`.trim(),
-//         email: guest.email || '',
-//         permission: guest.preferences?.opt_in ?? false,
-//       }));
-
-//       const eventGroup = new EventGroup({
-//         event_id: data.event_id,
-//         group_leader_name: `${data.main_guest.first_name || ''} ${data.main_guest.last_name || ''}`.trim(),
-//         group_leader_email: data.main_guest.email || '',
-//         group_member_details: groupMemberDetails,
-//         created_at: new Date(),
-//         updated_at: new Date(),
-//       });
-
-//       savedEventGroup = await eventGroup.save();
-//     }
-
-//     const mainGuest = new Attendee({
-//       event_id: data.event_id,
-//       first_name: data.main_guest.first_name || '',
-//       last_name: data.main_guest.last_name || '',
-//       name: `${data.main_guest.first_name || ''} ${data.main_guest.last_name || ''}`.trim(),
-//       email: data.main_guest.email || '',
-//       current_chm: data.main_guest.is_chm_patient === 'yes',
-//       permission: data.main_guest.email_preferences?.opt_in ?? false,
-//       registration_as: data.main_guest.registration_type || '',
-//       registration_type: type,
-//       group_id: savedEventGroup?._id || null,
-//       created_at: new Date(),
-//       updated_at: new Date(),
-//     });
-
-//     const savedMainGuest = await mainGuest.save();
-
-//     const additionalGuestsPromises = data.additional_guests?.map(async (guest) => {
-//       const attendee = new Attendee({
-//         event_id: data.event_id,
-//         first_name: guest.first_name || '',
-//         last_name: guest.last_name || '',
-//         email: guest.email || '',
-//         name: `${guest.first_name || ''} ${guest.last_name || ''}`.trim(),
-//         current_chm: guest.preferences?.chm ?? false,
-//         permission: guest.preferences?.opt_in ?? false,
-//         registration_as: data.main_guest.registration_type || '',
-//         registration_type: type,
-//         attendee_main_id: savedMainGuest._id,
-//         group_id: savedEventGroup?._id || null,
-//         created_at: new Date(),
-//         updated_at: new Date(),
-//       });
-//       return attendee.save();
-//     }) || [];
-
-//     const additionalGuests = await Promise.all(additionalGuestsPromises);
-
-//     return {
-//       success: true,
-//       mainGuest: savedMainGuest,
-//       eventGroup: savedEventGroup,
-//       additionalGuests,
-//     };
-//   } catch (error) {
-
-//     console.error('Error in createAttendeeService:', error);
-//     throw new Error(`Failed to create attendee: ${error.message}`);
-//   }
-// };
-
 const createAttendeeService = async (data) => {
   try {
+
     const additionalGuestsLength = data?.additional_guests?.length || 0;
     let savedEventGroup = null;
     let type = additionalGuestsLength > 0 ? 'Group' : 'Individual';
 
     const event_id = data.event_id;
     const registrationType = data.registration_type;
+    const status = registrationType === 'walkin' ? true : false;
+    
     if (!event_id) throw new Error('Event ID is required');
 
     
@@ -250,7 +117,9 @@ const createAttendeeService = async (data) => {
       const groupMemberDetails = data.additional_guests.map(guest => ({
         name: `${guest.first_name || ''} ${guest.last_name || ''}`.trim(),
         email: guest.email || '',
-        permission: guest.preferences?.opt_in ?? false,
+        preferences_chm: guest.preferences?.chm ?? false,
+        preferences_dr_brownstein: guest.preferences?.dr_brownstein ?? false,
+        preferences_opt_in: guest.preferences?.opt_in ?? false,
       }));
 
       const eventGroup = new EventGroup({
@@ -264,7 +133,6 @@ const createAttendeeService = async (data) => {
 
       savedEventGroup = await eventGroup.save();
     }
-    console.log("mainData",data);
     // Save Main Guest
     const savedMainGuest = await new Attendee({
       event_id,
@@ -272,9 +140,12 @@ const createAttendeeService = async (data) => {
       last_name: data.main_guest.last_name || '',
       name: `${data.main_guest.first_name || ''} ${data.main_guest.last_name || ''}`.trim(),
       email: data.main_guest.email || '',
-      current_chm: data.is_chm_patient === 'yes',
-      permission: data.main_guest.email_preferences?.opt_in ?? false,
+      is_chm_patient: data.is_chm_patient ||'',
+      email_preferences_chm: data.main_guest.email_preferences?.chm ?? false,
+      email_preferences_dr_brownstein: data.main_guest.email_preferences?.dr_brownstein ?? false,
+      email_preferences_opt_in: data.main_guest.email_preferences?.opt_in ?? false,
       registration_as: registrationType || '', 
+      is_paid: status,
       registration_type: type,
       group_id: savedEventGroup?._id || null,
       created_at: new Date(),
@@ -289,9 +160,11 @@ const createAttendeeService = async (data) => {
         last_name: guest.last_name || '',
         name: `${guest.first_name || ''} ${guest.last_name || ''}`.trim(),
         email: guest.email || '',
-        current_chm: guest.preferences?.chm ?? false,
-        permission: guest.preferences?.opt_in ?? false,
+        email_preferences_chm: guest.preferences?.chm ?? false,
+        email_preferences_dr_brownstein: guest.preferences?.opt_in ?? false,
+        email_preferences_opt_in: guest.preferences?.opt_in ?? false,
         registration_as: registrationType || '', 
+        is_paid: status,
         registration_type: type,
         attendee_main_id: savedMainGuest._id,
         group_id: savedEventGroup?._id || null,
@@ -333,7 +206,7 @@ const createAttendeeService = async (data) => {
 
       return { walkInCount, capacity, remainingWalkInCapacity, walkInRecord: updatedWalkInRecord };
     };
-    console.log(await countWalkInAttendees());
+   
     await countWalkInAttendees(); 
     return {
       success: true,
@@ -342,7 +215,7 @@ const createAttendeeService = async (data) => {
       additionalGuests,
     };
   } catch (error) {
-    console.error('Error in createAttendeeService:', error);
+
     throw new Error(`Failed to create attendee: ${error.message}`);
   }
 };
