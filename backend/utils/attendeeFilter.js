@@ -117,6 +117,5 @@ exports.buildFilters = (queryParams) => {
       ? { $and: filters }
       : {};
 
-  console.log("🛠 Final Mongo Query:", JSON.stringify(finalQuery, null, 2));
   return finalQuery;
 };

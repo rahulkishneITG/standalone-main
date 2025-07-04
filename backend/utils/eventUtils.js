@@ -70,7 +70,6 @@ async function getEventCountData() {
             TotalRevenu: totalPrice
         };
     } catch (error) {
-        console.error('Error in getEventCountData:', error.message);
         throw new Error('Failed to fetch event count data');
     }
 }
