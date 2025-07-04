@@ -15,13 +15,13 @@ exports.login = async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
-    console.log(user)
+   
     const ismatchedPassword = await Services.ismatchPassword(password, user);
     
     if (!ismatchedPassword) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
-    console.log(ismatchedPassword);
+    
     const generatedToken = await Services.generateToken(user, rememberMe);
     if (!generatedToken) {
       return res.status(500).json({ message: 'Error generating token' });
@@ -36,7 +36,7 @@ exports.login = async (req, res) => {
         } 
       });
   } catch (error) {
-    console.error('Login Error:', error);
+   
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 

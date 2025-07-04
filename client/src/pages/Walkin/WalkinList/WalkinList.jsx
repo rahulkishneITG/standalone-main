@@ -112,7 +112,6 @@ const WalkinList = () => {
       toast.error('Failed to delete walk-in');
     }
   };
-
   const rowMarkup = isTableLoading ? (
     <IndexTable.Row>
       <IndexTable.Cell colSpan={6}>
@@ -131,7 +130,7 @@ const WalkinList = () => {
         <IndexTable.Cell>${walkin.pricing_walk_in}</IndexTable.Cell>
         <IndexTable.Cell>
           <div className={styles.actions}>
-            <Button variant="plain" onClick={() => handleForm(index)}>
+            <Button variant="plain" onClick={() => handleForm(index)} disabled={walkin.remainingWalkInCapacity <= 0}>
               Form
             </Button>
           </div>

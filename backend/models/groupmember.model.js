@@ -3,7 +3,9 @@ const mongoose = require('mongoose');
 const groupMemberSchema = new mongoose.Schema({
   name: String,
   email: String,
-  permission:Boolean
+  preferences_chm: String,
+  preferences_dr_brownstein: String,
+  preferences_opt_in: String
 });
 
 const eventGroupSchema = new mongoose.Schema({

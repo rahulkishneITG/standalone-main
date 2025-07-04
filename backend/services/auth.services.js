@@ -15,7 +15,6 @@ exports.getUserForLogin = async (email, password, rememberMe) => {
     }
     return user;
   } catch (error) {
-    console.error('Login Error:', error);
     throw new Error('Error fetching user');
   }
 };
@@ -29,20 +28,17 @@ exports.generateToken = async (user, rememberMe) => {
         });
         return token;
     } catch (error) {
-        console.error('Error generating token:', error);
         return null;
     }
 };
 
 
 exports.ismatchPassword = async (password, user) => {   
-    console.log( await user.matchPassword(password));
     try {
         if (!user || !user.password) {
             throw new Error('User or password not found');
         }
     } catch (error) {
-        console.error('Error checking password:', error);
         throw new Error('Error checking password');
     }
     return await user.matchPassword(password);

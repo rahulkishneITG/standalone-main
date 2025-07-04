@@ -22,11 +22,12 @@ const WalkinForm = () => {
       if (!walkinDetails) {
         return <p>Walkin not found.</p>;
       }
+      console.log("walkinDetails",walkinDetails);
   return (
     <Page>
       <Layout >
         <div style={{ maxWidth: 'max-content', margin: '0 auto',display:"flex",marginBlock:"24px"}}>
-          <EventDetails event={walkinDetails.event_details} />
+          <EventDetails event={walkinDetails.event_details} event_id={walkinDetails.event_id}/>
         </div>
       </Layout>
     </Page>

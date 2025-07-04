@@ -3,7 +3,6 @@ const walk = require('../models/walk_in.model.js');
 const Event = require('../models/events.model.js');
 
 exports.getWalkinWithEventDetails = async (walkinID) => {
-  console.log('Fetching walkin with event details for ID:', walkinID);
   const walkinData = await walk.findById(walkinID);
   if (!walkinData) {
     throw new Error('Walk-in not found');

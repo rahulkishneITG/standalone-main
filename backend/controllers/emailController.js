@@ -18,7 +18,6 @@ exports.getEmailList = async (req, res) => {
         });
         res.status(200).json({ data: events, total });
     } catch (err) {
-        console.error('Error fetching events:', err);
         res.status(500).json({ message: 'Server error' });
     }
 };
