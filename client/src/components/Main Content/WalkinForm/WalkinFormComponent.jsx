@@ -75,7 +75,7 @@ const WalkinFormComponent = ({ event_id }) => {
 
     const payload = {
       event_id,
-      registration_type: form.registration_type.value, // 👈 You said this is pre-registration form
+      registration_type: form.registration_type.value, 
       main_guest: {
         ...mainGuest,
         email_preferences: {
