@@ -31,12 +31,27 @@ app.use(express.json());
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: false }));
+// app.use(cors({
+//   origin: allowedOrigins[process.env.NODE_ENV] || '*',
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
+//   allowedHeaders: ['Content-Type', 'Authorization'],
+// }));
+
 app.use(cors({
-  origin: allowedOrigins[process.env.NODE_ENV] || '*',
+  origin: function (origin, callback) {
+    const allowed = allowedOrigins[process.env.NODE_ENV] || [];
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
 
  
 // Connect to DB
