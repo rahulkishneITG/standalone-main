@@ -2,18 +2,18 @@ import { Card, Text, Image, BlockStack } from '@shopify/polaris';
 import styles from './EventDetails.module.css';
 import WalkinFormComponent from '../WalkinFormComponent';
 
-export default function EventDetails({ event }) {
+export default function EventDetails({ event, event_id }) {
   return (
     <Card>
       <div className={styles.container}>
         <div className={styles.imageWrapper}>
-          <Image source={event.imageUrl} alt={event.name} />
+            <Image source={event?.imageUrl || ''} alt={event?.title || ''} />
         </div>
         <div className={styles.info}>
-          <Text variant="headingLg">{event.name}</Text>
-          <Text>{event.description}</Text>
-          <Text fontWeight="bold">Price: ${event.walkinPrice}</Text>
-          <WalkinFormComponent />
+          <Text variant="headingLg">{event?.title}</Text>
+          <Text>{event?.description}</Text>
+          <Text fontWeight="bold">Price: ${event?.walkin_price}</Text>
+          <WalkinFormComponent event_id={event_id} />
         </div>
       </div>
     </Card>

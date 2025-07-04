@@ -1,5 +1,7 @@
 .form {
-    max-width: "max-content"
+    max-width: max-content;
+    width: 100%;
+    min-width: 24vw;
   }
   .heading {
     padding-bottom: 10px;

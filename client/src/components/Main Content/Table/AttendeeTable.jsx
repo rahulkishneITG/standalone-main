@@ -10,11 +10,11 @@ import { formatDate } from '../../../utils/dateFormatter.js';
 const AttendeeTable = ({ attendees }) => {
   const { selectedResources, allResourcesSelected, handleSelectionChange } = useIndexResourceState(attendees);
 
-  const rowMarkup = attendees.map(({ id, name, email, registration_type, is_paid, registered_at }, index) => (
+  const rowMarkup = attendees.map(({ _id, name, email, registration_type, is_paid, registered_at }, index) => (
     <IndexTable.Row
-      id={id}
-      key={id}
-      selected={selectedResources.includes(id)} 
+      id={_id}
+      key={_id}
+      selected={selectedResources.includes(_id)} 
       position={index}
     >
       <IndexTable.Cell>

@@ -15,6 +15,7 @@ const useEventStore = create((set) => ({
     walkInPrice: '',
     product: null,
     shopifyProductId: '',
+    shopifyProductName: '',
   },
   setField: (key, value) =>
     set((state) => ({
@@ -42,6 +43,7 @@ const useEventStore = create((set) => ({
         walkInPrice: '',
         product: null,
         shopifyProductId: '',
+        shopifyProductName: '',
       },
     })),
 }));

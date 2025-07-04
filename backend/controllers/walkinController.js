@@ -1,4 +1,5 @@
 const walk = require('../models/walk_in.model.js');
+const { getWalkinWithEventDetails } = require('../services/walkin.services.js');
 
 exports.walkinList = async (req, res) => {
     const {
@@ -27,13 +28,19 @@ exports.walkinList = async (req, res) => {
         total,
       });
     } catch (error) {
-      console.error('Error fetching walk-in list:', error);
       res.status(500).json({ message: 'Internal Server Error' });
     }
   };
   
 
-exports.walkInData = async (req,res) => {
-    const walkinID = req.param;
-    console.log('walkinId',walkinID);
-}
+  exports.walkInData = async (req, res) => {
+    const walkinID = req.params.walkinId;
+
+    try {
+      const result = await getWalkinWithEventDetails(walkinID);
+      res.status(200).json({ data: result });
+    } catch (error) {
+      const status = error.message === 'Walk-in not found' ? 404 : 500;
+      res.status(status).json({ message: error.message });
+    }
+  };

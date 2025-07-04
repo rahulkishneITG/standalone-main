@@ -20,6 +20,10 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  
+  const [loading, setLoading] = useState(false);
+  const [lastTried, setLastTried] = useState({ email: '', password: '' });
+  const [errorShown, setErrorShown] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -47,26 +51,67 @@ const Login = () => {
     }));
   }, []);
 
-  const handleLogin = useCallback(
-    async (e) => {
-      e.preventDefault();
+  // const handleLogin = useCallback(
+  //   async (e) => {
+  //     e.preventDefault();
 
-      const emailErr = validateEmail(form.email);
-      const passErr = validatePassword(form.password);
-      setErrors({ email: emailErr, password: passErr });
+  //     const emailErr = validateEmail(form.email);
+  //     const passErr = validatePassword(form.password);
+  //     setErrors({ email: emailErr, password: passErr });
 
-      if (!emailErr && !passErr) {
-        try {
-          await login(form.email, form.password, rememberMe);
-          toast.success('Login successful!');
-          setTimeout(() => navigate('/'), 1500);
-        } catch (error) {
-          toast.error('Login failed. Please try again.');
+  //     if (!emailErr && !passErr) {
+  //       try {
+  //         await login(form.email, form.password, rememberMe);
+  //         toast.success('Login successful!');
+  //         setTimeout(() => navigate('/'), 1500);
+  //       } catch (error) {
+  //         toast.error('Invalid email or password. Please check your credentials and try again.');
+  //       }
+  //     }
+  //   },
+  //   [form, rememberMe, login, navigate]
+  // );
+
+
+const handleLogin = useCallback(
+  async (e) => {
+    e.preventDefault();
+
+    const emailErr = validateEmail(form.email);
+    const passErr = validatePassword(form.password);
+    setErrors({ email: emailErr, password: passErr });
+
+    const sameAsLast = 
+      form.email === lastTried.email && 
+      form.password === lastTried.password;
+
+    //Block if same invalid input retried
+    if (!emailErr && !passErr && (!sameAsLast || !errorShown)) {
+      setLoading(true);
+      try {
+        await login(form.email, form.password, rememberMe);
+        toast.success('Login successful!');
+        setTimeout(() => navigate('/'), 1500);
+      } catch (error) {
+        if (!sameAsLast || !errorShown) {
+          toast.error('Invalid email or password. Please check your credentials and try again.');
+          setErrorShown(true);
         }
+        // Save last tried
+        setLastTried({ email: form.email, password: form.password });
+      } finally {
+        setLoading(false);
       }
-    },
-    [form, rememberMe, login, navigate]
-  );
+    }
+  },
+  [form, rememberMe, login, navigate, errorShown, lastTried]
+);
+
+// Reset errorShown when input changes
+useEffect(() => {
+  setErrorShown(false);
+}, [form.email, form.password]);
+
 
   return (
     <div className={style.mainLoginContainer}>

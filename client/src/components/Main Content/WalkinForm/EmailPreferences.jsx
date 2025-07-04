@@ -1,20 +1,27 @@
 import { Checkbox, InlineStack } from '@shopify/polaris';
 
-export default function EmailPreferences({ optIn, setOptIn }) {
-  return (
-    <>
-      <Checkbox
-        label="Receive updates about future events"
-        checked={optIn}
-        name="opt_in"
-        onChange={setOptIn}
-      />
-      {optIn && (
-        <InlineStack gap="4">
-          <Checkbox label="Dr. Brownstein’s events" name="updates_dr_brownstein" />
-          <Checkbox label="Center for Holistic Medicine" name="updates_chm" />
-        </InlineStack>
-      )}
-    </>
-  );
-}
+const EmailPreferences = ({ optIn, setOptIn, emailPrefs, setEmailPrefs }) => (
+  <>
+    <Checkbox
+      label="Receive updates about future events"
+      checked={optIn}
+      onChange={setOptIn}
+    />
+    {optIn && (
+      <InlineStack gap="4">
+        <Checkbox
+          label="Dr. Brownstein’s events"
+          checked={emailPrefs.dr_brownstein}
+          onChange={(val) => setEmailPrefs({ ...emailPrefs, dr_brownstein: val })}
+        />
+        <Checkbox
+          label="Center for Holistic Medicine"
+          checked={emailPrefs.chm}
+          onChange={(val) => setEmailPrefs({ ...emailPrefs, chm: val })}
+        />
+      </InlineStack>
+    )}
+  </>
+);
+
+export default EmailPreferences;

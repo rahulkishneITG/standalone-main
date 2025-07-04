@@ -12,8 +12,9 @@ import {
 } from '@shopify/polaris';
 import { SortIcon } from '@shopify/polaris-icons';
 import AttendeeTable from '../../components/Main Content/Table/AttendeeTable';
-import { useAttendeeStore } from '../../store/attendeeStore.js';
+
 import FullPageLoader from '../../components/Loader.jsx';
+import { useEmailStore } from '../../store/emailStore.js';
 
 const AttendeePage = () => {
   const [isFullPageLoading, setIsFullPageLoading] = useState(true);
@@ -21,8 +22,8 @@ const AttendeePage = () => {
   const [hasMountedOnce, setHasMountedOnce] = useState(false);
 
   const {
-    attendees,
-    totalAttendees,
+    emails,
+    totalEmails,
     query,
     registrationType,
     paidStatus,
@@ -30,7 +31,7 @@ const AttendeePage = () => {
     sortDirection,
     currentPage,
     itemsPerPage,
-    fetchAttendees,
+    fetchEmails,
     setQuery,
     setRegistrationType,
     setPaidStatus,
@@ -38,12 +39,12 @@ const AttendeePage = () => {
     setSortDirection,
     setPage,
     clearAll,
-  } = useAttendeeStore();
+  } = useEmailStore();
 
   useEffect(() => {
     const loadInitialData = async () => {
       setIsFullPageLoading(true);
-      await fetchAttendees();
+      await fetchEmails();
       setIsFullPageLoading(false);
       setHasMountedOnce(true);
     };
@@ -55,7 +56,7 @@ const AttendeePage = () => {
     if (!hasMountedOnce) return;
 
     setIsTableLoading(true);
-    fetchAttendees().finally(() => {
+    fetchEmails().finally(() => {
       setIsTableLoading(false);
     });
   }, [query, registrationType, paidStatus, registeredDate, sortDirection, currentPage]);
@@ -103,7 +104,8 @@ const AttendeePage = () => {
         <ChoiceList
           title="Paid"
           titleHidden
-          choices={[            { label: 'Yes', value: 'Yes' },
+          choices={[
+            { label: 'Yes', value: 'Yes' },
             { label: 'No', value: 'No' },
           ]}
           selected={paidStatus}
@@ -127,7 +129,7 @@ const AttendeePage = () => {
   ];
 
   if (isFullPageLoading) return <FullPageLoader />;
-
+  console.log('emails', emails);
   return (
     <Page fullWidth>
       <Card padding="0">
@@ -175,10 +177,10 @@ const AttendeePage = () => {
             <Spinner accessibilityLabel="Loading attendees" size="large" />
           </div>
         ) : (
-          <AttendeeTable attendees={attendees} />
+          <AttendeeTable attendees={emails} />
         )}
 
-        {totalAttendees > itemsPerPage && (
+        {totalEmails > itemsPerPage && (
           <div
             style={{
               display: 'flex',
@@ -191,7 +193,7 @@ const AttendeePage = () => {
             <Pagination
               hasPrevious={currentPage > 1}
               onPrevious={() => setPage(currentPage - 1)}
-              hasNext={currentPage < Math.ceil(totalAttendees / itemsPerPage)}
+              hasNext={currentPage < Math.ceil(totalEmails / itemsPerPage)}
               onNext={() => setPage(currentPage + 1)}
             />
           </div>

@@ -2,6 +2,7 @@ const Events = require('../models/events.model.js');
 const Attendee = require('../models/attendee.model.js');
 const GroupAttendee = require('../models/groupmember.model.js');
 const WalkInEvent = require('../models/walk_in.model.js');
+const axios = require('axios');
 
 const getPaginatedEvents = async ({ page, limit, search, sortBy, order }) => {
   const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -26,11 +27,10 @@ const getPaginatedEvents = async ({ page, limit, search, sortBy, order }) => {
     Events.countDocuments(query),
   ]);
 
-  console.log('Event', Events);
+
 
   return { events, total };
 };
-
 
 async function countGroupMembers(attendees) {
   let total = 0;
@@ -59,7 +59,7 @@ async function getEventCountData() {
       preAttendees
     ] = await Promise.all([
       Events.countDocuments(),
-      Attendee.countDocuments({ registration_as: "walk-in" }),
+      Attendee.countDocuments({ registration_as: "walkin" }),
       Attendee.countDocuments({ registration_as: "pre" }),
       Events.aggregate([
         { $group: { _id: null, totalPreprice: { $sum: "$pricing_pre_registration" } } }
@@ -67,7 +67,7 @@ async function getEventCountData() {
       Events.aggregate([
         { $group: { _id: null, totalWalkinPrice: { $sum: "$pricing_walk_in" } } }
       ]),
-      Attendee.find({ registration_as: "walk-in" }),
+      Attendee.find({ registration_as: "walkin" }),
       Attendee.find({ registration_as: "pre" })
     ]);
 
@@ -100,13 +100,14 @@ async function getEventCountData() {
       TotalRevenu: totalPrice
     };
   } catch (error) {
-    console.error('Error in getEventCountData:', error.message);
+
     throw new Error('Failed to fetch event count data');
   }
 }
 
 const createEventService = async (data) => {
   try {
+    // Destructure with defaults
     const {
       name,
       status = 'active',
@@ -126,38 +127,48 @@ const createEventService = async (data) => {
       pricing_walk_in = 0,
       image_url = '',
       shopify_product_id = '',
+      shopify_product_title = '',
       created_by
     } = data;
 
-
+    // Validate required fields
     const requiredFields = { name, event_date, event_time, location, created_by };
     for (const [field, value] of Object.entries(requiredFields)) {
-      if (!value) return { error: `Missing required field: ${field}` };
+      if (!value) {
+        return { error: `Missing required field: ${field}`, status: 400 };
+      }
     }
 
-  
+    // Validate dates
     const isValidDate = (d) => d && !isNaN(new Date(d).getTime());
-    if (!isValidDate(event_date)) return { error: 'Invalid event_date format' };
-    if (pre_registration_start && !isValidDate(pre_registration_start)) {
-      return { error: 'Invalid pre_registration_start format' };
-    }
-    if (pre_registration_end && !isValidDate(pre_registration_end)) {
-      return { error: 'Invalid pre_registration_end format' };
+    const dateValidations = [
+      { field: 'event_date', value: event_date },
+      { field: 'pre_registration_start', value: pre_registration_start, optional: true },
+      { field: 'pre_registration_end', value: pre_registration_end, optional: true }
+    ];
+
+    for (const { field, value, optional } of dateValidations) {
+      if (!optional && !isValidDate(value) || (optional && value && !isValidDate(value))) {
+        return { error: `Invalid ${field} format`, status: 400 };
+      }
     }
 
-  
-    const nonNegativeCheck = [
+    // Validate non-negative numbers
+    const nonNegativeFields = [
       { field: 'max_capacity', value: max_capacity },
       { field: 'walk_in_capacity', value: walk_in_capacity },
       { field: 'pre_registration_capacity', value: pre_registration_capacity },
       { field: 'pricing_pre_registration', value: pricing_pre_registration },
       { field: 'pricing_walk_in', value: pricing_walk_in }
     ];
-    for (const { field, value } of nonNegativeCheck) {
-      if (value < 0) return { error: `${field} must be a non-negative number` };
+
+    for (const { field, value } of nonNegativeFields) {
+      if (value < 0) {
+        return { error: `${field} must be a non-negative number`, status: 400 };
+      }
     }
 
-   
+    // Create event
     const event = new Events({
       name,
       status,
@@ -177,33 +188,116 @@ const createEventService = async (data) => {
       pricing_walk_in,
       image_url,
       shopify_product_id,
+      shopify_product_title,
       created_by
     });
 
- 
-    const now = new Date();
-    const eventDate = new Date(event_date);
-    event.status = now > eventDate ? 'past' : 'upcoming';
+    // Set event status based on date
+    event.status = new Date() > new Date(event_date) ? 'past' : 'upcoming';
 
+    // Save event (single save operation)
     await event.save();
+    const eventId = event._id.toString();
 
-    
-    if (walk_in_capacity && walk_in_capacity > 0) {
+    // Shopify configuration
+    const { SHOPIFY_STORE_DOMAIN: store, SHOPIFY_ADMIN_API_TOKEN: accessToken, SHOPIFY_API_VERSION: apiVersion = '2025-04' } = process.env;
+
+    if (!store || !accessToken) {
+      throw new Error('Missing Shopify configuration');
+    }
+
+    // Shopify GraphQL mutation
+    const updateProductMetafield = async () => {
+      const query = `
+        mutation UpdateProductMetafield($metafields: [MetafieldsSetInput!]!) {
+          metafieldsSet(metafields: $metafields) {
+            metafields { key namespace value type }
+            userErrors { field message }
+          }
+        }
+      `;
+
+      const variables = {
+        metafields: [{
+          ownerId: event.shopify_product_id,
+          namespace: 'custom',
+          key: 'eventid',
+          type: 'single_line_text_field',
+          value: eventId
+        }]
+      };
+
+      try {
+        const response = await axios.post(
+          `https://${store}/admin/api/${apiVersion}/graphql.json`,
+          { query, variables },
+          {
+            headers: {
+              'X-Shopify-Access-Token': accessToken,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        const { data: { metafieldsSet }, errors } = response.data;
+
+        if (errors || !metafieldsSet) {
+          return {
+            status: false,
+            message: 'Error updating metafield',
+            errors: errors || [{ message: 'Invalid response structure' }]
+          };
+        }
+
+        if (metafieldsSet.userErrors?.length > 0) {
+          return {
+            status: false,
+            message: 'Failed to update metafield',
+            errors: metafieldsSet.userErrors
+          };
+        }
+
+        return {
+          status: true,
+          message: 'Metafield updated successfully',
+          data: metafieldsSet.metafields
+        };
+      } catch (error) {
+        return {
+          status: false,
+          message: 'Error updating metafield',
+          error: error.message
+        };
+      }
+    };
+
+    // Create walk-in event if applicable
+    if (walk_in_capacity > 0) {
       const walkIn = new WalkInEvent({
         event_id: event._id,
         event_name: event.name,
         event_date: event.event_date,
-        walk_in_capacity: event.walk_in_capacity,
-        pricing_walk_in: event.pricing_walk_in
+        walk_in_capacity,
+        remainingWalkInCapacity: walk_in_capacity,
+        pricing_walk_in
       });
-
       await walkIn.save();
     }
 
-    return { event };
-  } catch (err) {
-    console.error('Service error:', err);
-    throw err;
+    // Execute Shopify update and return result
+    const shopifyResult = await updateProductMetafield();
+
+    return {
+      status: true,
+      event,
+      shopify: shopifyResult
+    };
+  } catch (error) {
+    return {
+      status: false,
+      error: error.message || 'Failed to create event',
+      statusCode: 500
+    };
   }
 };
 
@@ -212,28 +306,32 @@ const getEventByIdService = async (eventId) => {
 };
 
 const updateEvent = async (updateId, data) => {
-    if (!updateId) {
-        throw new Error('Update ID is required');
+  if (!updateId) {
+    throw new Error('Update ID is required');
+  }
+
+  if (!data || Object.keys(data).length === 0) {
+    throw new Error('Update data is required');
+  }
+
+  const now = new Date();
+  const eventDate = new Date(data.event_date);
+  data.status = now > eventDate ? 'past' : 'upcoming';
+
+  const updatedEvent = await Events.findByIdAndUpdate(
+    updateId,
+    { $set: data },
+    {
+      new: true,
+      runValidators: true
     }
+  );
 
-    if (!data || Object.keys(data).length === 0) {
-        throw new Error('Update data is required');
-    }
+  if (!updatedEvent) {
+    throw new Error('Event not found');
+  }
 
-    const updatedEvent = await Events.findByIdAndUpdate(
-        updateId,
-        { $set: data },
-        {
-            new: true,
-            runValidators: true
-        }
-    );
-
-    if (!updatedEvent) {
-        throw new Error('Event not found');
-    }
-
-    return updatedEvent;
+  return updatedEvent;
 };
 
 

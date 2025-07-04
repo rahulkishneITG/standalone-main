@@ -8,72 +8,54 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  
   const { showLoader, hideLoader } = useLoader();
-  
-// Check for existing token and fetch user data on mount
-  useEffect(() => {
-    const initializeUser = async () => {
-      const token = localStorage.getItem('token');
-      const storedUser = localStorage.getItem('user');
 
-      if (token && storedUser) {
-        try {
-          showLoader();
-   
-          const res = await axios.get(`${BASE_URL}api/auth/me`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          setUser(res.data.userData || JSON.parse(storedUser));
-        } catch (error) {
-          console.error('Error initializing user:', error);
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setUser(null);
-        } finally {
-          hideLoader();
-          setLoading(false);
-        }
-      } else {
-        setLoading(false); 
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        showLoader();
+        const res = await axios.get(`${BASE_URL}api/auth/me`, {
+          withCredentials: true, 
+        });
+        setUser(res.data.userData);
+      } catch (err) {
+        setUser(null);
+      } finally {
+        hideLoader();
+        setLoading(false);
       }
     };
-
-    initializeUser();
+    fetchUser();
   }, []);
 
   const login = async (email, password, rememberMe) => {
     try {
       showLoader();
-      const res = await axios.post(`${BASE_URL}api/auth/login`, { email, password, rememberMe });
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.userData));
+      const res = await axios.post(
+        `${BASE_URL}api/auth/login`,
+        { email, password, rememberMe },
+        { withCredentials: true } 
+      );
       setUser(res.data.userData);
-      setLoading(false);
-    } catch (error) {
-      console.error("Login Error", error);
-      throw error;
+    } catch (err) {
+      console.error('Login Error:', err);
+      throw err;
     } finally {
       hideLoader();
     }
   };
 
-
   const logout = async () => {
     try {
       showLoader();
-      setTimeout(() => {
-        localStorage.removeItem('token');
-        setUser(null);
-        hideLoader();
-      }, 2000);
-    } catch (error) {
-      console.error('Logout error:', error.message);
-      hideLoader(); 
-      setLoading(false);
+      await axios.post(`${BASE_URL}api/auth/logout`, {}, { withCredentials: true });
+      setUser(null);
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      hideLoader();
     }
   };
-
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout }}>

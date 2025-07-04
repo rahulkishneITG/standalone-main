@@ -10,7 +10,7 @@ exports.OrderWebhook = async (req, res) => {
 
         const verified = verifyWebhook(webhookData, hmacHeader);
 
-        console.log('Webhook verified:', verified);
+       
 
         if (!verified) {
             return res.status(401).send('Unauthorized: Invalid HMAC');
@@ -18,7 +18,7 @@ exports.OrderWebhook = async (req, res) => {
 
         res.status(200).send('Webhook received');
     } catch (err) {
-        console.error('Webhook error:', err.message);
+       
         res.status(500).send('Internal Server Error');
     }
 };

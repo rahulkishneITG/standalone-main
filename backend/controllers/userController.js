@@ -5,7 +5,6 @@ exports.updatepassword = async (req, res) => {
     try {
         const userId = req.user._id;
         const { currentPassword, newPassword } = req.body;
-        console.log(userId);
 
         if (!currentPassword || !newPassword) {
             return res.status(400).json({ message: 'Both passwords are required' });
@@ -38,7 +37,6 @@ exports.getUserProfile = async (req, res) => {
         imageUrl: imageUrl,
       });
     } catch (error) {
-      console.error('Fetching user profile failed:', error);
       res.status(500).json({ message: 'Failed to get user profile' });
     }
   };
@@ -56,7 +54,6 @@ exports.getUserProfile = async (req, res) => {
         user: updatedUser,
       });
     } catch (err) {
-      console.error('Update failed:', err.message);
       res.status(500).json({ message: err.message || 'Server error' });
     }
   };

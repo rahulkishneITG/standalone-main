@@ -53,3 +53,20 @@ export const createEvent = async (payload) => {
   });
   return response.data;
 };
+
+export const UpdateEditEventData = async (eventId,payload) => {
+  console.log(eventId)
+  if (!eventId || typeof eventId !== 'string') {
+    throw new Error('Invalid or missing event ID');
+  }
+  try {
+    const url = `${BASE_URL}/updateEventData/${eventId}`;  
+    const response = await axios.put(url,payload, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error) {
+    console.error('[API Error]:', error?.response?.data || error.message);
+    throw error; 
+  }
+};
