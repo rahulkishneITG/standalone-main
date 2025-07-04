@@ -219,7 +219,7 @@ const createEventService = async (data) => {
 
       const variables = {
         metafields: [{
-          ownerId: 'gid://shopify/Product/9966670774589',
+          ownerId: event.shopify_product_id,
           namespace: 'custom',
           key: 'eventid',
           type: 'single_line_text_field',

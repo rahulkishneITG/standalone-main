@@ -1,4 +1,5 @@
-import { Autocomplete, Icon, Spinner } from '@shopify/polaris';
+
+import { Autocomplete, Icon, Spinner, Text } from '@shopify/polaris';
 import { SearchIcon } from '@shopify/polaris-icons';
 import {
   useState,
@@ -19,7 +20,6 @@ const ProductSearch = forwardRef(({ error, onProductSelect }, ref) => {
     loading,
     setSelectedProduct,
   } = useProductStore();
-
 
   useImperativeHandle(ref, () => ({
     clear: () => {
@@ -89,6 +89,23 @@ const ProductSearch = forwardRef(({ error, onProductSelect }, ref) => {
         listTitle="Matching Products"
         loading={loading}
       />
+
+      {/* No products found below dropdown */}
+      {!loading && inputValue.length >= 2 && searchResults.length === 0 && (
+        <div style={{
+          marginTop: '6px',
+          padding: '8px 12px',
+          border: '1px solid #dcdcdc',
+          borderRadius: '8px',
+          backgroundColor: '#f9fafb',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+        }}>
+          <Text variant="bodySm" tone="subdued">No products found for "{inputValue}"</Text>
+        </div>
+      )}
+
     </div>
   );
 });

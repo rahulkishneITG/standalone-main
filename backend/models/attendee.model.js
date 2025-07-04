@@ -11,7 +11,7 @@ const attendeeSchema = new mongoose.Schema({
   group_last_name: { type: String },
   group_email: { type: String },
   permission: { type: Boolean, default: false },
-  is_chm_patient: { type: Boolean, default: false },
+  is_chm_patient: { type: String},
   registration_type: { type: String },
   registration_as: { type: String },
   is_paid: { type: String },

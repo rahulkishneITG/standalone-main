@@ -103,8 +103,7 @@ const AttendeePage = () => {
         <ChoiceList
           title="Paid"
           titleHidden
-          choices={[
-            { label: 'Yes', value: 'Yes' },
+          choices={[            { label: 'Yes', value: 'Yes' },
             { label: 'No', value: 'No' },
           ]}
           selected={paidStatus}

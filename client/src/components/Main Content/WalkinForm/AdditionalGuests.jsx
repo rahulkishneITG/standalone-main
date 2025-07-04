@@ -1,6 +1,6 @@
 import { Card, FormLayout, TextField, Checkbox, InlineStack, Box, Button } from '@shopify/polaris';
 
-const AdditionalGuests = ({ guests, addGuest, removeGuest, updateGuest, errors, setErrors, maxGuests }) => (
+const AdditionalGuests = ({ guests, addGuest, removeGuest, updateGuest, errors, setErrors, maxGuests,isDisabled }) => (
   <>
   
     {guests.map((guest, index) => (
@@ -88,7 +88,7 @@ const AdditionalGuests = ({ guests, addGuest, removeGuest, updateGuest, errors, 
         </div>
       </Card>
     ))}
-    <Button onClick={addGuest} disabled={guests.length + 1 >= maxGuests}>Add Another Guest</Button>
+    <Button onClick={addGuest} disabled={isDisabled || guests.length >= maxGuests}>Add Another Guest</Button>
     
   </>
 );
