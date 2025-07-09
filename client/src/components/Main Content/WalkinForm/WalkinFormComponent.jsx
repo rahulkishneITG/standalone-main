@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, Card, FormLayout, Text } from '@shopify/polaris';
 import MainGuestSection from './MainGuestSection';
 import EmailPreferences from './EmailPreferences';
@@ -6,18 +6,30 @@ import AdditionalGuests from './AdditionalGuests';
 import CHMAffiliation from './CHMAffiliation';
 import styles from './WalkinFormComponent.module.css';
 import { submitWalkinForm } from '../../../api/walkinApi';
+import useEventStore from '../../../store/eventStore';
 
 const WalkinFormComponent = ({ event_id }) => {
   const [mainGuest, setMainGuest] = useState({ first_name: '', last_name: '', email: '' });
-  const [optIn, setOptIn] = useState(false);
   const [emailPrefs, setEmailPrefs] = useState({ dr_brownstein: false, chm: false });
   const [guests, setGuests] = useState([]);
   const [isCHM, setIsCHM] = useState('');
   const [providerName, setProviderName] = useState('');
   const [errors, setErrors] = useState({});
 
-  const maxGuests = 5;
+  const {
+    eventDetails,
+    fetchEventDetails,
+    loading: eventLoading,
+  } = useEventStore();
 
+  // Fetch event data on mount
+  useEffect(() => {
+    if (event_id) fetchEventDetails(event_id);
+  }, [event_id]);
+  const maxGuests = 5;
+  const allowGroupRegistration = eventDetails?.allow_group_registration === true;
+  const isGroupDisabled = !allowGroupRegistration;
+  console.log("isGroupDisabled", isGroupDisabled);
   const addGuest = () => {
     if (guests.length + 1 >= maxGuests) return;
     setGuests([...guests, { first_name: '', last_name: '', email: '', preferences: {} }]);
@@ -75,11 +87,11 @@ const WalkinFormComponent = ({ event_id }) => {
 
     const payload = {
       event_id,
-      registration_type: form.registration_type.value, 
+      registration_type: form.registration_type.value,
       main_guest: {
         ...mainGuest,
         email_preferences: {
-          opt_in: optIn,
+          opt_in: false,
           dr_brownstein: emailPrefs.dr_brownstein,
           chm: emailPrefs.chm,
         },
@@ -91,13 +103,21 @@ const WalkinFormComponent = ({ event_id }) => {
 
     console.log('Final Payload:', payload);
     await submitWalkinForm(payload);
+    setMainGuest({ first_name: '', last_name: '', email: '' });
+    setGuests([]);
+    setEmailPrefs({ dr_brownstein: false, chm: false });
+    setIsCHM('');
+    setProviderName('');
+    setErrors({});
+
+    form.reset();
     alert('Submitted. Check console for payload.');
   };
 
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
-      <input type="hidden" name="event_id" value="custom_event_id" className={styles.hidden}/>
-       <input type="hidden" name="registration_type" value="walkin" className={styles.hidden}/>
+      <input type="hidden" name="event_id" value="custom_event_id" className={styles.hidden} />
+      <input type="hidden" name="registration_type" value="walkin" className={styles.hidden} />
       <Card>
         <FormLayout>
           <Text variant="headingMd">Pre-Registration Form</Text>
@@ -109,8 +129,7 @@ const WalkinFormComponent = ({ event_id }) => {
             setErrors={setErrors}
           />
           <EmailPreferences
-            optIn={optIn}
-            setOptIn={setOptIn}
+            
             emailPrefs={emailPrefs}
             setEmailPrefs={setEmailPrefs}
           />
@@ -122,6 +141,7 @@ const WalkinFormComponent = ({ event_id }) => {
             errors={errors}
             setErrors={setErrors}
             maxGuests={maxGuests}
+            isDisabled={isGroupDisabled}
           />
           <CHMAffiliation
             isCHM={isCHM}

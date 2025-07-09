@@ -49,11 +49,16 @@ export const getEditEventData = async (eventId) => {
 };
 export const createEvent = async (payload) => {
   const response = await axios.post(`${BASE_URL}/createEvent`, payload, {
-    headers: getAuthHeaders(),
+    headers: getAuthHeaders(),  
   });
   return response.data;
 };
-
+export const getEventData = async (event_id) => {
+  const response = await axios.post(`${BASE_URL}/eventDetails`, {
+    id: event_id,
+  });
+  return response.data;
+};
 export const UpdateEditEventData = async (eventId,payload) => {
   console.log(eventId)
   if (!eventId || typeof eventId !== 'string') {

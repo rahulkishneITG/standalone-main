@@ -69,7 +69,7 @@ const CreateEventForm = ({ eventdata = {} }) => {
       if (productInputRef.current && shopify_product_id && shopify_product_title) {
         productInputRef.current.setSelectedProductManually({
           label: shopify_product_title,
-          value: shopify_product_id.replace('gid://shopify/Product/', ''), // assuming you save it like that
+          value: shopify_product_id.replace('gid://shopify/Product/', ''), 
         });
       }
     }

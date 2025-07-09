@@ -9,19 +9,20 @@ import { formatDate } from '../../../utils/dateFormatter.js';
 
 const AttendeeTable = ({ attendees }) => {
   const { selectedResources, allResourcesSelected, handleSelectionChange } = useIndexResourceState(attendees);
-
-  const rowMarkup = attendees.map(({ id, name, email, registration_type, is_paid, registered_at }, index) => (
+  console.log(attendees);
+  const rowMarkup = attendees.map(({ _id, name, email, eventName, registration_type, is_paid, registered_at }, index) => (
     <IndexTable.Row
-      id={id}
-      key={id}
-      selected={selectedResources.includes(id)} 
+      id={_id}
+      key={_id}
+      selected={selectedResources.includes(_id)}
       position={index}
     >
       <IndexTable.Cell>
         <Text variant="bodyMd" fontWeight="medium">{name}</Text>
       </IndexTable.Cell>
       <IndexTable.Cell>{email}</IndexTable.Cell>
-      <IndexTable.Cell>{registration_type}</IndexTable.Cell> 
+      <IndexTable.Cell>{eventName}</IndexTable.Cell>
+      <IndexTable.Cell>{registration_type}</IndexTable.Cell>
       <IndexTable.Cell>{is_paid ? 'Yes' : 'No'}</IndexTable.Cell>
       <IndexTable.Cell>{formatDate(registered_at)}</IndexTable.Cell>
       <IndexTable.Cell>
@@ -41,6 +42,7 @@ const AttendeeTable = ({ attendees }) => {
       headings={[
         { title: 'Name' },
         { title: 'Email' },
+        { title: "Event Name" },
         { title: 'Registration Type' },
         { title: 'Paid' },
         { title: 'Registered Date' },

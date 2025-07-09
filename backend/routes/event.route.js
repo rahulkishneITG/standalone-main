@@ -12,5 +12,5 @@ router.delete('/deletedEvent/:delId',authMiddleware, deletedEvent);
 router.get('/editEvent/:editId',authMiddleware, editEvent); 
 router.put('/updateEventData/:updateId',authMiddleware, updateEventData); 
 router.get("/syncproduct",authMiddleware,syncProduct);
-router.post("/eventDetails",authMiddleware,eventDetails);
+router.post("/eventDetails",eventDetails);
 module.exports = router;

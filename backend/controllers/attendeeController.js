@@ -1,4 +1,6 @@
+const Attendee = require('../models/attendee.model.js');
 const { getAttendeeList, createAttendeeService }  = require('../services/attendeeService.js');
+const exportToCSV = require('../utils/csvExporter.js');
 
 exports.getAttendeeList = async (req, res) => {
   try {
@@ -18,5 +20,19 @@ exports.createAttendee = async (req, res) => {
 
   } catch (err) {
     return res.status(400).json({ error: err.message });
+  }
+};
+
+exports.exportAttendees = async (req, res) => {
+  try {
+    const attendees = await Attendee.find({}, 'name email').lean();
+    const csv = exportToCSV(attendees, ['name', 'email']);
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=attendees.csv');
+    res.status(200).send(csv);
+  } catch (err) {
+    console.error('Error exporting CSV:', err);
+    res.status(500).json({ message: 'Failed to export attendees' });
   }
 };

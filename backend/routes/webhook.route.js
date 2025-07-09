@@ -3,7 +3,7 @@ const router = express.Router();
 const { OrderWebhook } = require('../controllers/webhookController.js');
 const authMiddleware = require('../middleware/auth.middleware.js');
 
-router.get('/OrderWebhook', authMiddleware, OrderWebhook);
+router.post('/OrderWebhook', OrderWebhook);
 
 
 module.exports = router;
