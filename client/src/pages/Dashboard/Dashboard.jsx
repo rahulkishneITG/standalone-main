@@ -89,12 +89,12 @@ const Dashboard = () => {
               </div>
               <div className={styles.dashboardCardContent}>
                 <Text variant="headingLg" as="h5">
-                  {TotalRevenu} <Text as="span" color="subdued" fontWeight="regular">—</Text>
+                  ${TotalRevenu} <Text as="span" color="subdued" fontWeight="regular">—</Text>
                 </Text>
               </div>
               <div className={styles.dashboardCardContentFooter}>
                 <Text variant="bodyMd" color="subdued">
-                  Online: {TotalPrePrice} / Offline: {TotalWalkinPrice}
+                  Online: ${TotalPrePrice} / Offline: ${TotalWalkinPrice}
                 </Text>
               </div>
 
