@@ -9,6 +9,7 @@ const server = http.createServer(app);
 const PORT = 5000;
 const bodyParser = require("body-parser");
 const routes = require('./routes/index.js');
+
 const connectDB = require('./config/db.js');
 const seeder = require('./seed/seed.js');
 const eventseeder = require('./seed/eventseed.js')
@@ -52,7 +53,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-
+app.use(express.raw({ type: "application/json" }));
  
 // Connect to DB
 connectDB();      

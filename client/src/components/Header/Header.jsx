@@ -8,6 +8,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import FullPageLoader from '../Loader';
 import { exportToCSV } from '../../utils/exportCsv.js';
 import { useAttendeeStore } from '../../store/attendeeStore';
+import ExportCSVButton from '../ExportCSVButton.jsx';
 
 const Header = () => {
   const { toggleSidebar } = useSidebarStore();
@@ -65,11 +66,11 @@ const Header = () => {
       return (
         <>
           <Link to="/attendee">
-            <Button onClick={() => exportToCSV(attendees, 'attendees.csv')} variant="primary" tone="primary">Export as CSV</Button>
+            <ExportCSVButton />
           </Link>
-          <Link to="/attendee/import">
+          {/* <Link to="/attendee/import">
             <Button variant="primary" tone="primary">Bulk import attendees</Button>
-          </Link>
+          </Link> */}
         </>
       );
     }

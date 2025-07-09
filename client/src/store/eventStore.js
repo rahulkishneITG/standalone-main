@@ -65,7 +65,7 @@
 
 import { create } from 'zustand';
 import axios from 'axios'; 
-import { getEventList, deleteEventById } from '../api/eventApi';
+import { getEventList, deleteEventById, getEventData } from '../api/eventApi';
 
 const initialState = {
   eventList: [],
@@ -121,9 +121,7 @@ const useEventStore = create((set) => ({
   fetchEventDetails: async (event_id) => {
     set({ loading: true, error: null });
     try {
-      const { data } = await axios.post(`https://standalone-main-server.vercel.app/api/event/eventDetails`, {
-        id: event_id,
-      });
+      const { data } = await getEventData(event_id);
       set({ eventDetails: data, loading: false });
     } catch (err) {
       console.error('[Fetch Event Details Failed]:', err);

@@ -2,7 +2,9 @@ const Attendee = require('../models/attendee.model.js');
 const { buildFilters } = require('../utils/attendeeFilter.js');
 const normalizeQueryParams = require('../utils/normalizeQuery.js');
 const EventGroup = require('../models/groupmember.model.js');
+const Events = require('../models/events.model.js');
 const Walk_in = require('../models/walk_in.model.js');
+const { default: mongoose } = require('mongoose');
 
 const buildAttendeeData = (data) => ({
   _id: data._id || null,
@@ -19,6 +21,7 @@ const buildAttendeeData = (data) => ({
   hasGroupLeader: data.hasGroupLeader || false,
   groupLeaderId: data.groupLeaderId || null,
   groupLeaderName: data.groupLeaderName || null,
+  eventName : data.eventName || null,
 });
 
 const getAttendeeList = async (queryParams = {}) => {
@@ -51,9 +54,18 @@ const getAttendeeList = async (queryParams = {}) => {
   for (const attendee of rawAttendees) {
     const attendeeId = attendee._id.toString();
     const base = { ...attendee };
+    const eventId = attendee?.event_id;
+
+    let event = null;
+    let eventName = '';
+    if (eventId) {
+      event = await Events.findById(eventId).lean();
+      eventName = event?.name || '';
+    }
+    console.log(event?.name);
     if (Array.isArray(attendee.group_member_details) && attendee.group_member_details.length > 0) {
 
-      flatList.push(buildAttendeeData({ ...base, isGroupLeader: true }));
+      flatList.push(buildAttendeeData({ ...base, isGroupLeader: true, eventName}));
 
       attendee.group_member_details.forEach((member) => {
         if (mongoQuery.registration_type && !mongoQuery.registration_type.$in.includes(base.registration_type)) {
@@ -70,6 +82,7 @@ const getAttendeeList = async (queryParams = {}) => {
           group_id: attendeeId,
           groupLeaderId: attendeeId,
           groupLeaderName: attendee.name,
+          eventName,
         }));
       });
     } else if (attendee.group_id && attendee.group_id !== '') {
@@ -81,14 +94,17 @@ const getAttendeeList = async (queryParams = {}) => {
           hasGroupLeader: true,
           groupLeaderId: leader?._id || null,
           groupLeaderName: leader?.name || null,
+          eventName
         }));
       }
     } else {
       if (!mongoQuery.registration_type || mongoQuery.registration_type.$in.includes(base.registration_type)) {
-        flatList.push(buildAttendeeData({ ...base, isGroupLeader: false }));
+        flatList.push(buildAttendeeData({ ...base, isGroupLeader: false, eventName: event?.name || '' }));
       }
     }
   }
+
+
   const total = await Attendee.countDocuments(mongoQuery);
 
   return {
@@ -107,10 +123,10 @@ const createAttendeeService = async (data) => {
     const event_id = data.event_id;
     const registrationType = data.registration_type;
     const status = registrationType === 'walkin' ? true : false;
-    
+
     if (!event_id) throw new Error('Event ID is required');
 
-    
+
 
     // Save Event Group if applicable
     if (additionalGuestsLength > 0) {
@@ -140,11 +156,11 @@ const createAttendeeService = async (data) => {
       last_name: data.main_guest.last_name || '',
       name: `${data.main_guest.first_name || ''} ${data.main_guest.last_name || ''}`.trim(),
       email: data.main_guest.email || '',
-      is_chm_patient: data.is_chm_patient ||'',
+      is_chm_patient: data.is_chm_patient || '',
       email_preferences_chm: data.main_guest.email_preferences?.chm ?? false,
       email_preferences_dr_brownstein: data.main_guest.email_preferences?.dr_brownstein ?? false,
       email_preferences_opt_in: data.main_guest.email_preferences?.opt_in ?? false,
-      registration_as: registrationType || '', 
+      registration_as: registrationType || '',
       is_paid: status,
       registration_type: type,
       group_id: savedEventGroup?._id || null,
@@ -163,7 +179,7 @@ const createAttendeeService = async (data) => {
         email_preferences_chm: guest.preferences?.chm ?? false,
         email_preferences_dr_brownstein: guest.preferences?.opt_in ?? false,
         email_preferences_opt_in: guest.preferences?.opt_in ?? false,
-        registration_as: registrationType || '', 
+        registration_as: registrationType || '',
         is_paid: status,
         registration_type: type,
         attendee_main_id: savedMainGuest._id,
@@ -206,8 +222,8 @@ const createAttendeeService = async (data) => {
 
       return { walkInCount, capacity, remainingWalkInCapacity, walkInRecord: updatedWalkInRecord };
     };
-   
-    await countWalkInAttendees(); 
+
+    await countWalkInAttendees();
     return {
       success: true,
       mainGuest: savedMainGuest,
