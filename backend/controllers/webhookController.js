@@ -68,33 +68,6 @@ exports.OrderWebhook = async (req, res) => {
  
     }
 };
- 
-// function verifyWebhook(webhookData, hmacHeader) {
- 
-//     const sharedSecret = process.env.SHOPIFY_WEBHOOK_SECRET || '';
- 
-//     if (!sharedSecret) {
-//         console.error('Shopify webhook secret is not configured');
-//         return false;
-//     }
- 
-//     const calculatedHmac = crypto
-//         .createHmac('sha256', sharedSecret)
-//         .update(webhookData, 'utf8')
-//         .digest('base64');
- 
-//     if (calculatedHmac.length !== hmacHeader.length) {
-//         return false;
-//     }
- 
-//     return crypto.timingSafeEqual(
- 
-//         Buffer.from(calculatedHmac, 'base64'),
-//         Buffer.from(hmacHeader, 'base64')
-       
-//     );
- 
-// }
 
 
    
