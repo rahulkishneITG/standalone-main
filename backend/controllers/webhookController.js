@@ -4,58 +4,56 @@ const fs = require('fs').promises;
 const path = require('path');
 
 exports.OrderWebhook = async (req, res) => {
-  try {
-    if (req.method !== 'POST') {
-      return res.status(405).send('Method Not Allowed');
-    }
-
-    const hmacHeader = req.get('X-Shopify-Hmac-Sha256');
-    if (!hmacHeader) {
-      console.error('Missing X-Shopify-Hmac-Sha256 header');
-      return res.status(401).send('Unauthorized: Missing HMAC header');
-    }
-
-    const rawBody = await getRawBody(req);
-    const bodyString = rawBody.toString('utf8');
-
-    // HMAC Verification
-    const isVerified = verifyWebhook(bodyString, hmacHeader);
-    if (!isVerified) {
-      console.error('HMAC verification failed');
-      return res.status(401).send('Unauthorized: Invalid HMAC');
-    }
-
-    // Parse JSON Payload
-    let parsedData;
-    try {
-      parsedData = JSON.parse(bodyString);
-    } catch (err) {
-      console.error('Invalid JSON payload:', err.message);
-      return res.status(400).send('Invalid JSON payload');
-    }
-
-    // Save to File
-    try {
-      const filePath = path.join(__dirname, 'webhook_data.txt');
-      const dataToSave = JSON.stringify(parsedData, null, 2) + '\n\n';
-      await fs.appendFile(filePath, dataToSave);
-      console.log('Webhook data saved to:', filePath);
-    } catch (fileErr) {
-      console.error('Error saving webhook data:', fileErr.message);
-      return res.status(500).send('Error saving data');
-    }
-
-    res.status(200).send('Webhook received');
-  } catch (err) {
-    console.error('Unexpected webhook error:', err.message);
-    res.status(500).send('Internal Server Error');
+  if (req.method !== 'POST') {
+    return res.status(405).send('Method Not Allowed');
   }
+
+  const hmacHeader = req.get('X-Shopify-Hmac-Sha256');
+  if (!hmacHeader) {
+    console.error('Missing HMAC header');
+    return res.status(401).send('Unauthorized: HMAC header missing');
+  }
+
+  let rawBody;
+  try {
+    rawBody = await getRawBody(req);
+  } catch (err) {
+    console.error('Failed to read raw body:', err.message);
+    return res.status(400).send('Invalid body');
+  }
+
+  const bodyString = rawBody.toString('utf8');
+  const isVerified = verifyWebhook(bodyString, hmacHeader);
+
+  if (!isVerified) {
+    console.error('HMAC verification failed');
+    return res.status(401).send('Unauthorized: Invalid HMAC');
+  }
+
+  let parsedData;
+  try {
+    parsedData = JSON.parse(bodyString);
+  } catch (err) {
+    console.error('Invalid JSON:', err.message);
+    return res.status(400).send('Invalid JSON');
+  }
+
+  try {
+    const filePath = path.join(__dirname, 'webhook_data.txt');
+    await fs.appendFile(filePath, JSON.stringify(parsedData, null, 2) + '\n\n');
+    console.log('Webhook data saved:', filePath);
+  } catch (err) {
+    console.error('Failed to save webhook data:', err.message);
+    return res.status(500).send('Server Error: Could not save data');
+  }
+
+  res.status(200).send('Webhook received');
 };
 
 function verifyWebhook(payload, hmacHeader) {
-  const secret = process.env.SHOPIFY_WEBHOOK_SECRET || '';
+  const secret = process.env.SHOPIFY_WEBHOOK_SECRET;
   if (!secret) {
-    console.error('SHOPIFY_WEBHOOK_SECRET not configured');
+    console.error('Missing SHOPIFY_WEBHOOK_SECRET');
     return false;
   }
 
@@ -70,7 +68,7 @@ function verifyWebhook(payload, hmacHeader) {
       Buffer.from(hmacHeader, 'base64')
     );
   } catch (err) {
-    console.error('HMAC comparison failed:', err.message);
+    console.error('HMAC comparison error:', err.message);
     return false;
   }
 }
