@@ -9,6 +9,7 @@ const server = http.createServer(app);
 const PORT = 5000;
 const bodyParser = require("body-parser");
 const routes = require('./routes/index.js');
+app.use(express.raw({ type: "application/json" }));
 const connectDB = require('./config/db.js');
 const seeder = require('./seed/seed.js');
 const eventseeder = require('./seed/eventseed.js')
