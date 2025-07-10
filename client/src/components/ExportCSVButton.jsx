@@ -7,7 +7,7 @@ import { exportToCSV } from '../utils/exportCsv';
 const ExportCSVButton = () => {
     const handleExport = async () => {
         try {
-          const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/attendees/export`, {
+          const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/attendees/export`, {
             responseType: 'blob', 
           });
       
