@@ -4,7 +4,9 @@ const fs = require('fs').promises;
 const path = require('path');
  
 exports.OrderWebhook = async (req, res) => {
-
+    console.warn('OrderWebhook HIT');
+    console.debug('OrderWebhook HIT');
+    console.info('OrderWebhook HIT');
     console.log(req.body);
  
     try {

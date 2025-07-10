@@ -5,6 +5,10 @@ const verifyShopifyWebhook = (req, res, next) => {
     const hmacHeader = req.get("X-Shopify-Hmac-Sha256");
     const rawBody = req.body;
 
+    console.warn('OrderWebhook HIT1');
+    console.debug('OrderWebhook HIT1');
+    console.info('OrderWebhook HIT1');
+
     console.log("rawBody: ", rawBody);
 
     if (!rawBody || !Buffer.isBuffer(rawBody)) {
