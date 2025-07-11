@@ -13,7 +13,9 @@ const routes = require('./routes/index.js');
 const connectDB = require('./config/db.js');
 const seeder = require('./seed/seed.js');
 const eventseeder = require('./seed/eventseed.js')
-const groupregistre = require('./seed/groupregisterseed.js')
+const groupregistre = require('./seed/groupregisterseed.js');
+const { verifyShopifyWebhook } = require('./middleware/verifyWebhook.js');
+const { OrderWebhook } = require('./controllers/webhookController.js');
 
 dotenv.config();
 const allowedOrigins = {
@@ -21,13 +23,22 @@ const allowedOrigins = {
     'http://localhost:3000',
     'http://localhost:5173',
     'https://store.centerforholisticmedicine.com',
+    'https://siddhi-test.myshopify.com'
   ],
   production: [
     'https://standalone-main.vercel.app',
-    'https://store.centerforholisticmedicine.com'
+    'https://store.centerforholisticmedicine.com',
+    'https://siddhi-test.myshopify.com'
   ],
 };
 // Setup middlewares
+app.post(
+  '/api/webhook/OrderWebhook',
+  express.raw({ type: 'application/json' }), 
+  verifyShopifyWebhook,
+  OrderWebhook
+);
+
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(cookieParser());
@@ -53,7 +64,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-app.use(express.raw({ type: "application/json" }));
+// app.use(express.raw({ type: "application/json" }));
  
 // Connect to DB
 connectDB();      

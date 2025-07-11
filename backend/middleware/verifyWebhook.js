@@ -1,42 +1,35 @@
-const crypto = require("crypto");
-// Webhook verification middleware
+const getRawBody = require('raw-body');
+const crypto = require('crypto');
 
-const verifyShopifyWebhook = (req, res, next) => {
-    const hmacHeader = req.get("X-Shopify-Hmac-Sha256");
-    const rawBody = req.body;
+exports.verifyShopifyWebhook = async (req, res, next) => {
 
-    console.warn('OrderWebhook HIT1');
-    console.debug('OrderWebhook HIT1');
-    console.info('OrderWebhook HIT1');
+  const secret = process.env.SHOPIFY_WEBHOOK_SECRET;
 
-    console.log("rawBody: ", rawBody);
+  const hmacHeader = req.headers['x-shopify-hmac-sha256'];
 
-    if (!rawBody || !Buffer.isBuffer(rawBody)) {
-        console.error("Invalid request body: Expected a Buffer");
-        return res.status(400).send("Invalid request body");
-    }
-
-    const secret = process.env.SHOPIFY_WEBHOOK_SECRET;
-    const hash = crypto
-        .createHmac("sha256", secret)
-        .update(rawBody)
-        .digest("base64");
-
-    if (hash !== hmacHeader) {
-        console.error("Webhook HMAC verification failed");
-        return res.status(401).send("Unauthorized");
-    }
-
-    try {
-        req.body = JSON.parse(rawBody.toString("utf8"));
-        next();
-    } catch (error) {
-        console.error("Error parsing webhook body:", error.message);
-        return res.status(400).send("Invalid JSON body");
-    }
-};
+  const rawBody = req.body;
 
 
-module.exports = {
-    verifyShopifyWebhook
+  if (!Buffer.isBuffer(rawBody)) {
+    console.error('Invalid body format');
+    return res.status(400).send('Invalid body format');
+  }
+
+  const generatedHash = crypto
+    .createHmac('sha256', secret)
+    .update(rawBody)
+    .digest('base64');
+
+
+  if (generatedHash !== hmacHeader) {
+    return res.status(401).send('Unauthorized');
+  }
+
+  try {
+    req.body = JSON.parse(rawBody.toString('utf8'));
+    next();
+  } catch (err) {
+    console.error('JSON Parse Error:', err.message);
+    return res.status(400).send('Invalid JSON');
+  }
 }
