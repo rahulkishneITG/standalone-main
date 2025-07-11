@@ -23,14 +23,15 @@ const allowedOrigins = {
     'http://localhost:3000',
     'http://localhost:5173',
     'https://store.centerforholisticmedicine.com',
+    'https://siddhi-test.myshopify.com'
   ],
   production: [
     'https://standalone-main.vercel.app',
-    'https://store.centerforholisticmedicine.com'
+    'https://store.centerforholisticmedicine.com',
+    'https://siddhi-test.myshopify.com'
   ],
 };
 // Setup middlewares
-
 app.post(
   '/api/webhook/OrderWebhook',
   express.raw({ type: 'application/json' }), 
