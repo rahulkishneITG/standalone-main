@@ -12,7 +12,6 @@ import {
 } from '@shopify/polaris';
 import { SortIcon } from '@shopify/polaris-icons';
 import AttendeeTable from '../../components/Main Content/Table/AttendeeTable';
-
 import FullPageLoader from '../../components/Loader.jsx';
 import { useEmailStore } from '../../store/emailStore.js';
 
@@ -28,6 +27,7 @@ const AttendeePage = () => {
     registrationType,
     paidStatus,
     registeredDate,
+    eventName,               
     sortDirection,
     currentPage,
     itemsPerPage,
@@ -36,6 +36,7 @@ const AttendeePage = () => {
     setRegistrationType,
     setPaidStatus,
     setRegisteredDate,
+    setEventName,           
     setSortDirection,
     setPage,
     clearAll,
@@ -48,18 +49,16 @@ const AttendeePage = () => {
       setIsFullPageLoading(false);
       setHasMountedOnce(true);
     };
-
     loadInitialData();
   }, []);
 
   useEffect(() => {
     if (!hasMountedOnce) return;
-
     setIsTableLoading(true);
     fetchEmails().finally(() => {
       setIsTableLoading(false);
     });
-  }, [query, registrationType, paidStatus, registeredDate, sortDirection, currentPage]);
+  }, [query, registrationType, paidStatus, registeredDate, eventName, sortDirection, currentPage]); 
 
   const appliedFilters = [
     registrationType.length > 0 && {
@@ -76,6 +75,11 @@ const AttendeePage = () => {
       key: 'registeredDate',
       label: `Date: ${registeredDate}`,
       onRemove: () => setRegisteredDate(''),
+    },
+    eventName && {
+      key: 'eventName',
+      label: `Event Name: ${eventName}`,
+      onRemove: () => setEventName(''), 
     },
   ].filter(Boolean);
 
@@ -109,8 +113,8 @@ const AttendeePage = () => {
             { label: 'No', value: 'No' },
           ]}
           selected={paidStatus}
-          onChange={setPaidStatus}
-          allowMultiple
+          onChange={(value) => setPaidStatus(value)}
+          allowMultiple={false}
         />
       ),
     },
@@ -120,8 +124,21 @@ const AttendeePage = () => {
       filter: (
         <TextField
           label="Date"
+          type="date"
           value={registeredDate}
           onChange={setRegisteredDate}
+          autoComplete="off"
+        />
+      ),
+    },
+    {
+      key: 'eventName',
+      label: 'Event Name',
+      filter: (
+        <TextField
+          label="Event Name"
+          value={eventName}
+          onChange={setEventName}
           autoComplete="off"
         />
       ),
@@ -129,7 +146,7 @@ const AttendeePage = () => {
   ];
 
   if (isFullPageLoading) return <FullPageLoader />;
-  console.log('emails', emails);
+
   return (
     <Page fullWidth>
       <Card padding="0">
