@@ -21,8 +21,99 @@ const buildAttendeeData = (data) => ({
   hasGroupLeader: data.hasGroupLeader || false,
   groupLeaderId: data.groupLeaderId || null,
   groupLeaderName: data.groupLeaderName || null,
-  eventName : data.eventName || null,
+  eventName: data.eventName || null,
 });
+
+// const getAttendeeList = async (queryParams = {}) => {
+//   const {
+//     page = 1,
+//     limit = 10,
+//     sort = 'name',
+//     direction = 'asc',
+//   } = queryParams;
+
+//   const normalizedParams = normalizeQueryParams(queryParams);
+
+//   const mongoQuery = buildFilters(normalizedParams);
+
+
+//   const safeLimit = Math.max(1, parseInt(limit));
+//   const safePage = Math.max(1, parseInt(page));
+//   const skip = (safePage - 1) * safeLimit;
+
+//   const sortBy = { [sort]: direction === 'asc' ? 1 : -1 };
+//   const rawAttendees = await Attendee.find(mongoQuery)
+//     .sort(sortBy)
+//     .skip(skip)
+//     .limit(safeLimit)
+//     .lean();
+
+//   const attendeeMap = Object.fromEntries(rawAttendees.map((a) => [a._id.toString(), a]));
+//   let flatList = [];
+
+//   for (const attendee of rawAttendees) {
+//     console.log('rawAttendees',rawAttendees);
+//     const attendeeId = attendee._id.toString();
+//     const base = { ...attendee };
+//     const eventId = attendee?.event_id;
+
+//     let event = null;
+//     let eventName = '';
+//     if (eventId) {
+//       event = await Events.findById(eventId).lean();
+//       eventName = event?.name || '';
+//     }
+//     console.log(event?.name);
+//     if (Array.isArray(attendee.group_member_details) && attendee.group_member_details.length > 0) {
+
+//       flatList.push(buildAttendeeData({ ...base, isGroupLeader: true, eventName}));
+
+//       attendee.group_member_details.forEach((member) => {
+//         if (mongoQuery.registration_type && !mongoQuery.registration_type.$in.includes(base.registration_type)) {
+//           return;
+//         }
+//         flatList.push(buildAttendeeData({
+//           ...base,
+//           _id: null,
+//           name: member.name,
+//           email: member.email,
+//           registration_type: base.registration_type,
+//           isGroupLeader: false,
+//           hasGroupLeader: true,
+//           group_id: attendeeId,
+//           groupLeaderId: attendeeId,
+//           groupLeaderName: attendee.name,
+//           eventName,
+//         }));
+//       });
+//     } else if (attendee.group_id && attendee.group_id !== '') {
+//       const leader = attendeeMap[attendee.group_id];
+//       if (!mongoQuery.registration_type || mongoQuery.registration_type.$in.includes(base.registration_type)) {
+//         flatList.push(buildAttendeeData({
+//           ...base,
+//           isGroupLeader: false,
+//           hasGroupLeader: true,
+//           groupLeaderId: leader?._id || null,
+//           groupLeaderName: leader?.name || null,
+//           eventName
+//         }));
+//       }
+//     } else {
+//       if (!mongoQuery.registration_type || mongoQuery.registration_type.$in.includes(base.registration_type)) {
+//         flatList.push(buildAttendeeData({ ...base, isGroupLeader: false, eventName: event?.name || '' }));
+//       }
+//     }
+//   }
+
+
+//   const total = await Attendee.countDocuments(mongoQuery);
+
+//   return {
+//     total,
+//     attendees: flatList,
+//   };
+// };
+
 
 const getAttendeeList = async (queryParams = {}) => {
   const {
@@ -30,47 +121,54 @@ const getAttendeeList = async (queryParams = {}) => {
     limit = 10,
     sort = 'name',
     direction = 'asc',
+    event_name = '',
   } = queryParams;
 
   const normalizedParams = normalizeQueryParams(queryParams);
-
   const mongoQuery = buildFilters(normalizedParams);
 
+  if (queryParams.registered_date) {
+    const date = new Date(queryParams.registered_date);
+    const startOfDay = new Date(date.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(date.setHours(23, 59, 59, 999));
+
+    mongoQuery.registered_at = {
+      $gte: startOfDay,
+      $lte: endOfDay,
+    };
+  }
 
   const safeLimit = Math.max(1, parseInt(limit));
   const safePage = Math.max(1, parseInt(page));
   const skip = (safePage - 1) * safeLimit;
-
   const sortBy = { [sort]: direction === 'asc' ? 1 : -1 };
-  const rawAttendees = await Attendee.find(mongoQuery)
+
+  const allMatchingAttendees = await Attendee.find(mongoQuery)
     .sort(sortBy)
-    .skip(skip)
-    .limit(safeLimit)
     .lean();
 
-  const attendeeMap = Object.fromEntries(rawAttendees.map((a) => [a._id.toString(), a]));
+  const eventIds = [...new Set(allMatchingAttendees.map(a => a.event_id).filter(Boolean))];
+  const events = await Events.find({ _id: { $in: eventIds } }).lean();
+  const eventMap = Object.fromEntries(events.map(e => [e._id.toString(), e.name]));
+
   let flatList = [];
 
-  for (const attendee of rawAttendees) {
+  for (const attendee of allMatchingAttendees) {
     const attendeeId = attendee._id.toString();
     const base = { ...attendee };
-    const eventId = attendee?.event_id;
+    const eventId = attendee.event_id?.toString();
+    const eventName = eventMap[eventId] || '';
 
-    let event = null;
-    let eventName = '';
-    if (eventId) {
-      event = await Events.findById(eventId).lean();
-      eventName = event?.name || '';
+    if (event_name && !eventName.toLowerCase().includes(event_name.toLowerCase())) {
+      continue;
     }
-    console.log(event?.name);
-    if (Array.isArray(attendee.group_member_details) && attendee.group_member_details.length > 0) {
 
-      flatList.push(buildAttendeeData({ ...base, isGroupLeader: true, eventName}));
+    if (Array.isArray(attendee.group_member_details) && attendee.group_member_details.length > 0) {
+      flatList.push(buildAttendeeData({ ...base, isGroupLeader: true, eventName }));
 
       attendee.group_member_details.forEach((member) => {
-        if (mongoQuery.registration_type && !mongoQuery.registration_type.$in.includes(base.registration_type)) {
-          return;
-        }
+        if (mongoQuery.registration_type && !mongoQuery.registration_type.$in.includes(base.registration_type)) return;
+
         flatList.push(buildAttendeeData({
           ...base,
           _id: null,
@@ -86,7 +184,7 @@ const getAttendeeList = async (queryParams = {}) => {
         }));
       });
     } else if (attendee.group_id && attendee.group_id !== '') {
-      const leader = attendeeMap[attendee.group_id];
+      const leader = allMatchingAttendees.find(a => a._id.toString() === attendee.group_id);
       if (!mongoQuery.registration_type || mongoQuery.registration_type.$in.includes(base.registration_type)) {
         flatList.push(buildAttendeeData({
           ...base,
@@ -99,19 +197,22 @@ const getAttendeeList = async (queryParams = {}) => {
       }
     } else {
       if (!mongoQuery.registration_type || mongoQuery.registration_type.$in.includes(base.registration_type)) {
-        flatList.push(buildAttendeeData({ ...base, isGroupLeader: false, eventName: event?.name || '' }));
+        flatList.push(buildAttendeeData({ ...base, isGroupLeader: false, eventName }));
       }
     }
   }
 
-
-  const total = await Attendee.countDocuments(mongoQuery);
+  const total = flatList.length;
+  const paginatedAttendees = flatList.slice(skip, skip + safeLimit);
 
   return {
     total,
-    attendees: flatList,
+    attendees: paginatedAttendees,
   };
 };
+
+
+
 
 const createAttendeeService = async (data) => {
   try {
