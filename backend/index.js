@@ -53,7 +53,7 @@ app.use(cors({
 }));
 
 
- 
+app.use(express.raw({ type: "application/json" }));
 // Connect to DB
 connectDB();      
 // seeder(); 
