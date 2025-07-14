@@ -3,7 +3,7 @@ const router = express.Router();
 const { getAttendeeList,createAttendee, exportAttendees } = require('../controllers/attendeeController.js');
 const  authMiddleware  = require('../middleware/auth.middleware.js');
 
-router.get('/getAttendeeList',authMiddleware,getAttendeeList);
+router.get('/getAttendeeList',getAttendeeList);
 router.post('/createAttendee',createAttendee);
 router.get('/export', exportAttendees);
 

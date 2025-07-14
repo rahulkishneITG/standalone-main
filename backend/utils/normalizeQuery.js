@@ -2,6 +2,8 @@
 module.exports = (queryParams) => {
   const normalized = { ...queryParams };
 
+  console.log('normalized',normalized);
+
   if (normalized.registration_type && !Array.isArray(normalized.registration_type)) {
     normalized.registration_type = [normalized.registration_type];
   }
