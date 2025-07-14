@@ -1,70 +1,62 @@
-const crypto = require('crypto');
-const getRawBody = require('raw-body');
-const fs = require('fs').promises;
-const path = require('path');
- 
+const Attendee = require("../models/attendee.model");
+
+
 exports.OrderWebhook = async (req, res) => {
- 
-    console.log(req.body);
- 
-    try {
- 
-        // if (req.method !== 'POST') {
-        //     return res.status(405).send('Method Not Allowed');
-        // }
- 
-        // const hmacHeader = req.get('X-Shopify-Hmac-Sha256');
- 
-        // if (!hmacHeader) {
-        //     console.error('Missing X-Shopify-Hmac-Sha256 header');
-        //     return res.status(401).send('Unauthorized: Missing HMAC header');
-        // }
- 
-        // const webhookData = (await getRawBody(req)).toString('utf8');
- 
-       
-        // let parsedData;
- 
-        // try {
- 
-        //     parsedData = JSON.parse(webhookData);
-        //     console.log("parsedData :-",parsedData);
-        // } catch (err) {
- 
-        //     console.error('Invalid JSON payload:', err.message);
-        //     return res.status(400).send('Invalid JSON payload');
- 
-        // }
- 
-        // const verified = verifyShopifyWebhook(webhookData, hmacHeader);
- 
-        // if (!verified) {
- 
-        //     console.error('HMAC verification failed');
-        //     return res.status(401).send('Unauthorized: Invalid HMAC');
- 
-        // }
- 
-     
-        // try {
- 
-        //     const filePath = path.join(__dirname, 'webhook_data.txt');
-        //     const dataToSave = JSON.stringify(parsedData, null, 2) + '\n\n';
-        //     await fs.appendFile(filePath, dataToSave);
-        //     console.log('Webhook data saved to:', filePath);
- 
-        // } catch (fileErr) {
- 
-        //     console.error('Error saving webhook data to file:', fileErr.message);
-         
-        // }
- 
-        // res.status(200).send('Webhook received');
- 
-    } catch (err) {
- 
-        console.error('Webhook error:', err.message);
-        res.status(500).send('Internal Server Error');
- 
+  console.log('OrderWebhook called');
+  const body = req.body;
+  console.log(body);
+  try {
+    const attendeesToUpdate = [];
+
+    for (const item of body.line_items || []) {
+      const props = item.properties || [];
+
+      const eventId = props.find(p => p.name === 'event_id')?.value;
+      if (!eventId) continue;
+
+      // Collect all emails
+      const emails = [];
+
+      const mainEmail = props.find(p => p.name === 'attendee_email')?.value;
+      if (mainEmail) emails.push(mainEmail);
+
+      // Collect guest emails
+      for (let i = 1; i <= 4; i++) {
+        const guestEmail = props.find(p => p.name === `guest_${i}_email`)?.value;
+        if (guestEmail) emails.push(guestEmail);
+      }
+
+      // Prepare attendees list
+      for (const email of emails) {
+        attendeesToUpdate.push({ event_id: eventId, email });
+      }
     }
+
+    if (attendeesToUpdate.length === 0) {
+      console.warn('No valid attendees found in order');
+      return res.status(400).send('No attendees to update');
+    }
+
+    console.log('Attendees to mark paid:', attendeesToUpdate);
+
+    // Update attendees in DB
+    for (const { event_id, email } of attendeesToUpdate) {
+      const result = await Attendee.findOneAndUpdate(
+        { event_id, email },
+        { $set: { is_paid: true } },
+        { new: true }
+      );
+
+      if (result) {
+        console.log(`Paid: ${email} for event ${event_id}`);
+      } else {
+        console.warn(`Not found: ${email} for event ${event_id}`);
+      }
+    }
+
+    res.status(200).send('Webhook processed');
+  } catch (err) {
+    console.error('Error processing webhook:', err.message);
+    res.status(500).send('Internal Server Error');
+  }
 };
