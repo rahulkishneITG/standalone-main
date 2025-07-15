@@ -42,11 +42,10 @@ exports.getPaginatedEmail = async ({ page, limit, search, sortBy, order }) => {
       .sort({ [sortBy]: sortOrder })
       .skip(skip)
       .limit(Number(limit))
-      .lean(), // ✅ lean helps with performance and modifying results
+      .lean(), 
     Attendee.countDocuments(query)
   ]);
 
-  // ✅ Add event name for each attendee
   const updatedAttendees = await Promise.all(
     attendees.map(async (attendee) => {
       let eventName = '';
@@ -64,3 +63,5 @@ exports.getPaginatedEmail = async ({ page, limit, search, sortBy, order }) => {
 
   return { events: updatedAttendees, total };
 };
+
+

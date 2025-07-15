@@ -7,10 +7,13 @@ import {
 } from '@shopify/polaris';
 import { formatDate } from '../../../utils/dateFormatter.js';
 
-const AttendeeTable = ({ attendees }) => {
+const AttendeeTable = ({ attendees,setModalOpen} ) => {
   const { selectedResources, allResourcesSelected, handleSelectionChange } = useIndexResourceState(attendees);
   console.log(attendees);
-  const rowMarkup = attendees.map(({ _id, name, email, eventName, registration_type, is_paid, registered_at }, index) => (
+  const hasEmailPreferences = attendees.some(
+    attendee => attendee.email_preferences_chm || attendee.email_preferences_dr_brownstein
+  );
+  const rowMarkup = attendees.map(({ _id, name, email, email_preferences_chm, email_preferences_dr_brownstein, eventName, registration_type, is_paid, registered_at }, index) => (
     <IndexTable.Row
       id={_id}
       key={_id}
@@ -25,8 +28,17 @@ const AttendeeTable = ({ attendees }) => {
       <IndexTable.Cell>{registration_type}</IndexTable.Cell>
       <IndexTable.Cell>{is_paid ? 'Yes' : 'No'}</IndexTable.Cell>
       <IndexTable.Cell>{formatDate(registered_at)}</IndexTable.Cell>
+      {hasEmailPreferences && (
+        <IndexTable.Cell>
+          {email_preferences_chm || email_preferences_dr_brownstein
+            ? [email_preferences_chm && 'CHM', email_preferences_dr_brownstein && 'Dr. Brownstein']
+              .filter(Boolean)
+              .join(', ')
+            : 'No'}
+        </IndexTable.Cell>
+      )}
       <IndexTable.Cell>
-        <Link variant="plain" onClick={() => console.log(`Resend email to ${email}`)}>
+        <Link variant="plain" onClick={() => setModalOpen(true)}>
           Resend confirmation email
         </Link>
       </IndexTable.Cell>
@@ -46,6 +58,7 @@ const AttendeeTable = ({ attendees }) => {
         { title: 'Registration Type' },
         { title: 'Paid' },
         { title: 'Registered Date' },
+        ...(hasEmailPreferences ? [{ title: 'Future Emails' }] : []),
         { title: 'Actions' },
       ]}
       selectable={false}

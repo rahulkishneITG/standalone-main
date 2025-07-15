@@ -15,7 +15,7 @@ const seeder = require('./seed/seed.js');
 const eventseeder = require('./seed/eventseed.js')
 const groupregistre = require('./seed/groupregisterseed.js');
 const { verifyShopifyWebhook } = require('./middleware/verifyWebhook.js');
-const { OrderWebhook } = require('./controllers/webhookController.js');
+const { OrderWebhook, updateInventory } = require('./controllers/webhookController.js');
 
 dotenv.config();
 const allowedOrigins = {
@@ -31,10 +31,13 @@ const allowedOrigins = {
     'https://siddhi-test.myshopify.com'
   ],
 };
-// Setup middlewares
+// app.post('/api/webhook/inventoryUpdate', bodyParser.raw({ type: 'application/json' }),
+//   verifyShopifyWebhook, 
+//   updateInventory 
+// );
 app.post(
   '/api/webhook/OrderWebhook',
-  express.raw({ type: 'application/json' }), 
+  express.raw({ type: 'application/json' }),
   verifyShopifyWebhook,
   OrderWebhook
 );
@@ -65,23 +68,22 @@ app.use(cors({
 }));
 
 // app.use(express.raw({ type: "application/json" }));
- 
+
 // Connect to DB
-connectDB();      
+connectDB();
 // seeder(); 
 // eventseeder();
 // groupregistre();
- 
+
 // Routes
 app.use("/api", routes);
- 
+
 // Test route
 app.use("/", (req, res) => {
   res.send("Yes, now you can hit APIs");
 });
- 
+
 // Start the server
 server.listen(PORT, () => {
   console.log("Server is running on port", PORT);
 });
-  

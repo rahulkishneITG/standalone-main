@@ -22,7 +22,7 @@ const EventSchema = new mongoose.Schema({
   shopify_product_title: { type: String},
   created_by: { type: String },
   created_at: { type: Date, default: Date.now },
-  updated_at: { type: Date, default: Date.now }
+  updated_at: { type: Date, default: Date.now },
 });
 
 EventSchema.pre('save', function(next) {
