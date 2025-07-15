@@ -4,9 +4,7 @@ const Events = require("../models/events.model.js");
 const crypto = require("crypto");
 
 exports.OrderWebhook = async (req, res) => {
-  console.log('OrderWebhook called');
   const body = req.body;
-  console.log(body);
   try {
     const attendeesToUpdate = [];
 
@@ -64,8 +62,11 @@ exports.OrderWebhook = async (req, res) => {
 };
 exports.updateInventory = async (req, res) => {
   const productData = req.body;
-  console.log(productData);
   const productId = productData?.id;
+
+
+  let variantId = productData.variants?.[0]?.admin_graphql_api_id;
+
   if (!productId) {
     console.error('productData.id not found');
     return res.status(400).send('Invalid product payload');
@@ -134,15 +135,35 @@ exports.updateInventory = async (req, res) => {
       console.log("No matching event found");
       return;
     }
-  
+    
     const variant = productData.variants?.[0];
     const inventoryQuantity = parseInt(variant?.inventory_quantity ?? 0);
     const price = parseFloat(variant?.price ?? 0);
     const maxCapacity = mainEvent.max_capacity ?? 0;
-  
+
+    // const lastSynced = new Date(mainEvent.updated_at || 0);
+
+    // //SKIP if this is a quick follow-up update (e.g. within 5 seconds of previous sync)
+    // const shopifyUpdatedAt = new Date(variant?.updated_at || productData.updated_at);
+    // if ((shopifyUpdatedAt - lastSynced) < 5000) {
+    //   console.log("Skipping product update — likely from checkout inventory change.");
+    //   return;
+    // }
+
+    const newQty = parseInt(variant?.inventory_quantity ?? 0);
+    const oldQty = parseInt(variant?.old_inventory_quantity ?? 0);
+
+    const isCheckoutTriggered = oldQty > newQty;
+
+    if (isCheckoutTriggered) {
+      console.log("Inventory committed due to checkout. Skipping DB update.");
+      return res.status(200).send("Ignored checkout inventory change");
+    }
+
     let updatedWalkInCapacity = 0;
     let updatedMaxCapacity = maxCapacity;
-  
+    let updatePregistrationCapacity = 0;
+
     if (inventoryQuantity <= maxCapacity) {
       updatedWalkInCapacity = maxCapacity - inventoryQuantity;
     } else {
@@ -150,7 +171,7 @@ exports.updateInventory = async (req, res) => {
       updatedMaxCapacity += overflow;
       updatedWalkInCapacity = 0;
     }
-  
+    updatePregistrationCapacity = updatedMaxCapacity - updatedWalkInCapacity;
     // Update only the needed fields
     const updateResult = await Events.updateOne(
       { shopify_product_id: formattedShopifyProductId },
@@ -158,11 +179,12 @@ exports.updateInventory = async (req, res) => {
         $set: {
           max_capacity: updatedMaxCapacity,
           walk_in_capacity: updatedWalkInCapacity,
+          pre_registration_capacity: updatePregistrationCapacity,
           pricing_pre_registration: mongoose.Types.Decimal128.fromString(price.toString())
         }
       }
     );
-  
+
     console.log('Inventory updated:', {
       productId: productData.id,
       inventoryQuantity,
@@ -172,13 +194,13 @@ exports.updateInventory = async (req, res) => {
       modified: updateResult.modifiedCount,
       matched: updateResult.matchedCount,
     });
-  
+
     if (updateResult.modifiedCount === 0) {
       console.warn('Document found but not modified. Check if values are already the same.');
     }
   };
-  
-  
+
+
   if (await inventoryItemExistsInDatabase(formattedShopifyProductId)) {
     console.log("got it")
     await updateInventoryInDatabase(productData);

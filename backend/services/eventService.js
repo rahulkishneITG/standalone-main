@@ -487,7 +487,7 @@ const createEventService = async (data) => {
     const nonNegativeFields = [
       { field: 'max_capacity', value: max_capacity },
       { field: 'walk_in_capacity', value: walk_in_capacity },
-      { field: 'pre_registration_capacity', value: pre_registration_capacity },
+      { field: 'pre_registration_capacity', value: max_capacity - walk_in_capacity },
       { field: 'pricing_pre_registration', value: pricing_pre_registration },
       { field: 'pricing_walk_in', value: pricing_walk_in }
     ];
@@ -614,7 +614,8 @@ const createEventService = async (data) => {
         if (!productVariant || !locationId) throw new Error('Missing variant or location');
         return {
           inventoryItemId: productVariant.inventoryItem.id,
-          locationId
+          locationId,
+          variantId: productVariant.id 
         };
       } catch (err) {
         throw new Error(`Inventory detail fetch failed: ${err.message}`);
@@ -668,14 +669,72 @@ const createEventService = async (data) => {
     };
 
     // Update Shopify Inventory
-    const updateShopifyInventory = async (inventoryItemId, locationId, delta) => {
+    // const updateShopifyInventory = async (inventoryItemId, locationId, delta) => {
+    //   const mutation = `
+    //     mutation InventorySet($input: InventoryAdjustQuantitiesInput!) {
+    //       inventoryAdjustQuantities(input: $input) {
+    //         inventoryAdjustmentGroup {
+    //           createdAt
+    //           reason
+    //         }
+    //         userErrors {
+    //           field
+    //           message
+    //         }
+    //       }
+    //     }
+    //   `;
+
+    //   const variables = {
+    //     input: {
+    //       name: "available",
+    //       reason: "correction",
+    //       changes: [
+    //         {
+    //           inventoryItemId,
+    //           locationId,
+    //           delta
+    //         }
+    //       ]
+    //     }
+    //   };
+
+    //   try {
+    //     const response = await axios.post(
+    //       `https://${store}/admin/api/${apiVersion}/graphql.json`,
+    //       { query: mutation, variables },
+    //       {
+    //         headers: {
+    //           'X-Shopify-Access-Token': accessToken,
+    //           'Content-Type': 'application/json'
+    //         }
+    //       }
+    //     );
+
+    //     console.log('Inventory update response:', JSON.stringify(response.data, null, 2));
+
+    //     const data = response.data.data;
+    //     const errors = data?.inventoryAdjustQuantities?.userErrors;
+    //     if (errors?.length) {
+    //       return { status: false, message: 'Inventory update failed', errors };
+    //     }
+    //     return {
+    //       status: true,
+    //       message: 'Inventory updated successfully',
+    //       data: data.inventoryAdjustQuantities.inventoryAdjustmentGroup
+    //     };
+    //   } catch (err) {
+    //     return {
+    //       status: false,
+    //       message: 'Inventory update error',
+    //       error: err.message
+    //     };
+    //   }
+    // };
+    const updateShopifyInventory = async (inventoryItemId, locationId, quantity) => {
       const mutation = `
-        mutation InventorySet($input: InventoryAdjustQuantitiesInput!) {
-          inventoryAdjustQuantities(input: $input) {
-            inventoryAdjustmentGroup {
-              createdAt
-              reason
-            }
+        mutation InventorySet($input: InventorySetOnHandQuantitiesInput!) {
+          inventorySetOnHandQuantities(input: $input) {
             userErrors {
               field
               message
@@ -683,21 +742,20 @@ const createEventService = async (data) => {
           }
         }
       `;
-
+  
       const variables = {
         input: {
-          name: "available",
-          reason: "correction",
-          changes: [
+          setQuantities: [
             {
               inventoryItemId,
               locationId,
-              delta
+              quantity,
             }
-          ]
+          ],
+          reason: "correction" // Use a valid reason here
         }
       };
-
+  
       try {
         const response = await axios.post(
           `https://${store}/admin/api/${apiVersion}/graphql.json`,
@@ -709,23 +767,78 @@ const createEventService = async (data) => {
             }
           }
         );
-
-        console.log('Inventory update response:', JSON.stringify(response.data, null, 2));
-
+  
+        console.log('Inventory set response:', JSON.stringify(response.data, null, 2));
+  
         const data = response.data.data;
-        const errors = data?.inventoryAdjustQuantities?.userErrors;
+        const errors = data?.inventorySetOnHandQuantities?.userErrors;
         if (errors?.length) {
-          return { status: false, message: 'Inventory update failed', errors };
+          return { status: false, message: 'Inventory set failed', errors };
         }
+  
         return {
           status: true,
-          message: 'Inventory updated successfully',
-          data: data.inventoryAdjustQuantities.inventoryAdjustmentGroup
+          message: 'Inventory set successfully'
         };
       } catch (err) {
         return {
           status: false,
-          message: 'Inventory update error',
+          message: 'Inventory set error',
+          error: err.message
+        };
+      }
+    };
+    const updateVariantPrice = async (variantId, priceAmount) => {
+      const mutation = `
+        mutation productVariantUpdate($input: ProductVariantInput!) {
+          productVariantUpdate(input: $input) {
+            productVariant {
+              id
+              price
+            }
+            userErrors {
+              field
+              message
+            }
+          }
+        }
+      `;
+    
+      const variables = {
+        input: {
+          id: variantId,
+          price: priceAmount.toString() // Price must be string
+        }
+      };
+    
+      try {
+        const response = await axios.post(
+          `https://${store}/admin/api/${apiVersion}/graphql.json`,
+          { query: mutation, variables },
+          {
+            headers: {
+              'X-Shopify-Access-Token': accessToken,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+    
+        console.log('Price update response:', JSON.stringify(response.data, null, 2));
+    
+        const errors = response.data.data?.productVariantUpdate?.userErrors;
+        if (errors?.length) {
+          return { status: false, message: 'Price update failed', errors };
+        }
+    
+        return {
+          status: true,
+          message: 'Price updated successfully',
+          variant: response.data.data.productVariantUpdate.productVariant
+        };
+      } catch (err) {
+        return {
+          status: false,
+          message: 'Price update error',
           error: err.message
         };
       }
@@ -750,7 +863,7 @@ const createEventService = async (data) => {
     let inventoryUpdateResult = {};
     try {
       const totalQty = max_capacity - walk_in_capacity;
-      const { inventoryItemId, locationId } = await getInventoryDetails(productGid);
+      const { inventoryItemId, locationId,variantId } = await getInventoryDetails(productGid);
       console.log('InventoryItemID:', inventoryItemId, 'LocationID:', locationId);
 
       const trackingResult = await enableInventoryTracking(inventoryItemId);
@@ -758,6 +871,8 @@ const createEventService = async (data) => {
 
       inventoryUpdateResult = await updateShopifyInventory(inventoryItemId, locationId, totalQty);
       console.log('Inventory Update Result:', inventoryUpdateResult);
+      const priceUpdateResult = await updateVariantPrice(variantId, pricing_pre_registration);
+      console.log('Price Update Result:', priceUpdateResult);
     } catch (invError) {
       console.log('Inventory Error:', invError.message);
       inventoryUpdateResult = { status: false, message: invError.message };

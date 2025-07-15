@@ -9,6 +9,8 @@ const attendeesRoute = require('./attendees.route.js');
 const userRoute = require('./user.route.js');
 const walkRoute = require('./walkin.route.js');
 const emailRoute = require('./email.route.js');
+const { sendEmailController } = require('../controllers/sendEmailController.js');
+
 
 router.use("/auth", authRoutes);
 
@@ -23,5 +25,7 @@ router.use("/walkin", walkRoute);
 router.use("/attendees", attendeesRoute);
 
 router.use("/email", emailRoute);
+
+router.use("/send-email",sendEmailController)
 
 module.exports = router;

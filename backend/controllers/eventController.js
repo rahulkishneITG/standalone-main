@@ -1,4 +1,5 @@
 const Events = require('../models/events.model.js');
+const Walkin = require("../models/walk_in.model.js");
 const { getPaginatedEvents, getEventCountData, createEventService, updateEvent } = require('../services/eventService.js');
 
 
@@ -65,7 +66,8 @@ exports.deletedEvent = async (req, res) => {
         if (!result) {
             return res.status(404).json({ message: "Event not found" });
         }
-
+        await Walkin.deleteMany({ event_id: delId });
+        
         return res.status(200).json({ message: "Deleted successfully", deleted: result });
     } catch (error) {
         return res.status(500).json({ error: "Internal server error" });

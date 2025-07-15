@@ -31,17 +31,17 @@ const allowedOrigins = {
     'https://siddhi-test.myshopify.com'
   ],
 };
-// Setup middlewares
-app.post('/api/webhook/inventoryUpdate', bodyParser.raw({ type: 'application/json' }),
-  verifyShopifyWebhook, 
-  updateInventory 
-);
+// app.post('/api/webhook/inventoryUpdate', bodyParser.raw({ type: 'application/json' }),
+//   verifyShopifyWebhook, 
+//   updateInventory 
+// );
 app.post(
   '/api/webhook/OrderWebhook',
   express.raw({ type: 'application/json' }),
   verifyShopifyWebhook,
   OrderWebhook
 );
+
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(cookieParser());

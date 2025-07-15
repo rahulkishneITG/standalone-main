@@ -12,15 +12,15 @@ import {
 } from '@shopify/polaris';
 import { SortIcon } from '@shopify/polaris-icons';
 import AttendeeTable from '../../components/Main Content/Table/AttendeeTable';
-
 import FullPageLoader from '../../components/Loader.jsx';
 import { useEmailStore } from '../../store/emailStore.js';
-
+import EmailFormModal from '../../components/EmailForm.jsx';
+ 
 const AttendeePage = () => {
   const [isFullPageLoading, setIsFullPageLoading] = useState(true);
   const [isTableLoading, setIsTableLoading] = useState(false);
   const [hasMountedOnce, setHasMountedOnce] = useState(false);
-
+ 
   const {
     emails,
     totalEmails,
@@ -28,6 +28,7 @@ const AttendeePage = () => {
     registrationType,
     paidStatus,
     registeredDate,
+    eventName,              
     sortDirection,
     currentPage,
     itemsPerPage,
@@ -36,11 +37,12 @@ const AttendeePage = () => {
     setRegistrationType,
     setPaidStatus,
     setRegisteredDate,
+    setEventName,          
     setSortDirection,
     setPage,
     clearAll,
   } = useEmailStore();
-
+ 
   useEffect(() => {
     const loadInitialData = async () => {
       setIsFullPageLoading(true);
@@ -48,19 +50,17 @@ const AttendeePage = () => {
       setIsFullPageLoading(false);
       setHasMountedOnce(true);
     };
-
     loadInitialData();
   }, []);
-
+ 
   useEffect(() => {
     if (!hasMountedOnce) return;
-
     setIsTableLoading(true);
     fetchEmails().finally(() => {
       setIsTableLoading(false);
     });
-  }, [query, registrationType, paidStatus, registeredDate, sortDirection, currentPage]);
-
+  }, [query, registrationType, paidStatus, registeredDate, eventName, sortDirection, currentPage]);
+ 
   const appliedFilters = [
     registrationType.length > 0 && {
       key: 'registrationType',
@@ -77,8 +77,13 @@ const AttendeePage = () => {
       label: `Date: ${registeredDate}`,
       onRemove: () => setRegisteredDate(''),
     },
+    eventName && {
+      key: 'eventName',
+      label: `Event Name: ${eventName}`,
+      onRemove: () => setEventName(''),
+    },
   ].filter(Boolean);
-
+ 
   const filters = [
     {
       key: 'registrationType',
@@ -93,7 +98,7 @@ const AttendeePage = () => {
           ]}
           selected={registrationType}
           onChange={setRegistrationType}
-          allowMultiple
+          allowMultiple={false}
         />
       ),
     },
@@ -109,8 +114,8 @@ const AttendeePage = () => {
             { label: 'No', value: 'No' },
           ]}
           selected={paidStatus}
-          onChange={setPaidStatus}
-          allowMultiple
+          onChange={(value) => setPaidStatus(value)}
+          allowMultiple={false}
         />
       ),
     },
@@ -120,16 +125,29 @@ const AttendeePage = () => {
       filter: (
         <TextField
           label="Date"
+          type="date"
           value={registeredDate}
           onChange={setRegisteredDate}
           autoComplete="off"
         />
       ),
     },
+    {
+      key: 'eventName',
+      label: 'Event Name',
+      filter: (
+        <TextField
+          label="Event Name"
+          value={eventName}
+          onChange={setEventName}
+          autoComplete="off"
+        />
+      ),
+    },
   ];
-
+ 
+  const [modalOpen, setModalOpen] = useState(false);
   if (isFullPageLoading) return <FullPageLoader />;
-  console.log('emails', emails);
   return (
     <Page fullWidth>
       <Card padding="0">
@@ -158,7 +176,7 @@ const AttendeePage = () => {
             </div>
             <Button onClick={setSortDirection} icon={<Icon source={SortIcon} tone="base" />} />
           </div>
-
+ 
           <div style={{ marginTop: '0rem' }}>
             <Filters
               queryValue=""
@@ -171,15 +189,15 @@ const AttendeePage = () => {
             />
           </div>
         </div>
-
+ 
         {isTableLoading ? (
           <div style={{ textAlign: 'center', padding: '2rem' }}>
             <Spinner accessibilityLabel="Loading attendees" size="large" />
           </div>
         ) : (
-          <AttendeeTable attendees={emails} />
+          <AttendeeTable attendees={emails} setModalOpen={setModalOpen}/>
         )}
-
+ 
         {totalEmails > itemsPerPage && (
           <div
             style={{
@@ -199,8 +217,9 @@ const AttendeePage = () => {
           </div>
         )}
       </Card>
+          <EmailFormModal  open={modalOpen} onClose={() => setModalOpen(false)}/>
     </Page>
   );
 };
-
+ 
 export default AttendeePage;
