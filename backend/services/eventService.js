@@ -188,7 +188,7 @@ async function getEventCountData() {
 //     const {
 //       SHOPIFY_STORE_DOMAIN: store,
 //       SHOPIFY_ADMIN_API_TOKEN: accessToken,
-//       SHOPIFY_API_VERSION: apiVersion = '2024-04'
+//       SHOPIFY_API_VERSION: apiVersion = '2025-07'
 //     } = process.env;
 
 //     if (!store || !accessToken) throw new Error('Missing Shopify configuration');
@@ -525,7 +525,7 @@ const createEventService = async (data) => {
     const {
       SHOPIFY_STORE_DOMAIN: store,
       SHOPIFY_ADMIN_API_TOKEN: accessToken,
-      SHOPIFY_API_VERSION: apiVersion = '2024-04'
+      SHOPIFY_API_VERSION: apiVersion = '2025-07'
     } = process.env;
 
     if (!store || !accessToken) throw new Error('Missing Shopify configuration');
@@ -908,7 +908,7 @@ const updateEvent = async (updateId, data) => {
   const {
     SHOPIFY_STORE_DOMAIN: store,
     SHOPIFY_ADMIN_API_TOKEN: accessToken,
-    SHOPIFY_API_VERSION: apiVersion = '2024-04'
+    SHOPIFY_API_VERSION: apiVersion = '2025-07'
   } = process.env;
   // Get Inventory Details
   const getInventoryDetails = async (productid) => {

@@ -4,7 +4,7 @@ module.exports = async function syncProduct(req, res) {
   try {
     const { q = '' } = req.query;
 
-    const baseUrl = `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/2024-04/products.json?limit=250`;
+    const baseUrl = `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/2025-07/products.json?limit=250`;
     const headers = {
       'X-Shopify-Access-Token': process.env.SHOPIFY_ADMIN_API_TOKEN,
     };
