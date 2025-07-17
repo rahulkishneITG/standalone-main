@@ -5,7 +5,6 @@ export const useEmailStore = create((set, get) => ({
   emails: [],
   totalEmails: 0,
   loading: false,
-
   query: '',
   registrationType: [],
   paidStatus: [],
