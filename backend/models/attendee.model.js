@@ -14,7 +14,7 @@ const attendeeSchema = new mongoose.Schema({
   is_chm_patient: { type: String},
   registration_type: { type: String },
   registration_as: { type: String },
-  is_paid: { type: Boolean , default: false},
+  is_paid: { type: Boolean, default: false },
   amount_paid: { type: mongoose.Decimal128, default: 0.00 },
   registered_at: { type: Date, default: Date.now },
   group_id: { type: String },

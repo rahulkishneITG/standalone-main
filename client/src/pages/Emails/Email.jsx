@@ -96,11 +96,12 @@ const useAttendeeStore = create((set) => ({
   },
 }));
 
+
 const AttendeePage = () => {
   const [isFullPageLoading, setIsFullPageLoading] = useState(true);
   const [isTableLoading, setIsTableLoading] = useState(false);
   const [hasMountedOnce, setHasMountedOnce] = useState(false);
-
+ 
   const {
     attendees,
     totalAttendees,
@@ -131,19 +132,16 @@ const AttendeePage = () => {
       setIsFullPageLoading(false);
       setHasMountedOnce(true);
     };
-
     loadInitialData();
   }, []);
-
+ 
   useEffect(() => {
     if (!hasMountedOnce) return;
-
     setIsTableLoading(true);
     fetchAttendees().finally(() => {
       setIsTableLoading(false);
     });
   }, [query, registrationType, paidStatus, registeredDate, eventName, sortDirection, currentPage]); // Added eventName to dependencies
-
   const appliedFilters = [
     registrationType.length > 0 && {
       key: 'registrationType',
@@ -166,7 +164,7 @@ const AttendeePage = () => {
       onRemove: () => setEventName(''),
     },
   ].filter(Boolean);
-
+ 
   const filters = [
     {
       key: 'registrationType',
@@ -181,7 +179,7 @@ const AttendeePage = () => {
           ]}
           selected={registrationType}
           onChange={setRegistrationType}
-          allowMultiple
+          allowMultiple={false}
         />
       ),
     },
@@ -215,7 +213,6 @@ const AttendeePage = () => {
         />
       ),
     },
-    
     {
       key: 'eventName',
       label: 'Event Name',
@@ -229,9 +226,9 @@ const AttendeePage = () => {
       ),
     },
   ];
-
+ 
+  const [modalOpen, setModalOpen] = useState(false);
   if (isFullPageLoading) return <FullPageLoader />;
-
   return (
     <Page fullWidth>
       <Card padding="0">
@@ -260,7 +257,7 @@ const AttendeePage = () => {
             </div>
             <Button onClick={setSortDirection} icon={<Icon source={SortIcon} tone="base" />} />
           </div>
-
+ 
           <div style={{ marginTop: '0rem' }}>
             <Filters
               queryValue=""
@@ -273,7 +270,7 @@ const AttendeePage = () => {
             />
           </div>
         </div>
-
+ 
         {isTableLoading ? (
           <div style={{ textAlign: 'center', padding: '2rem' }}>
             <Spinner accessibilityLabel="Loading attendees" size="large" />
@@ -305,8 +302,8 @@ const AttendeePage = () => {
           </div>
         )}
       </Card>
+          <EmailFormModal  open={modalOpen} onClose={() => setModalOpen(false)}/>
     </Page>
   );
 };
-
 export default AttendeePage;

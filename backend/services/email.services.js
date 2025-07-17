@@ -62,7 +62,6 @@ const getPaginatedEmail = async (queryParams = {}) => {
   const eventIds = [...new Set(allMatchingAttendees.map(a => a.event_id).filter(Boolean))];
   const events = await Events.find({ _id: { $in: eventIds } }).lean();
   const eventMap = Object.fromEntries(events.map(e => [e._id.toString(), e.name]));
-
   let flatList = [];
 
   for (const attendee of allMatchingAttendees) {

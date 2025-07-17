@@ -9,10 +9,13 @@ const server = http.createServer(app);
 const PORT = 5000;
 const bodyParser = require("body-parser");
 const routes = require('./routes/index.js');
+
 const connectDB = require('./config/db.js');
 const seeder = require('./seed/seed.js');
 const eventseeder = require('./seed/eventseed.js')
-const groupregistre = require('./seed/groupregisterseed.js')
+const groupregistre = require('./seed/groupregisterseed.js');
+const { verifyShopifyWebhook } = require('./middleware/verifyWebhook.js');
+const { OrderWebhook, updateInventory } = require('./controllers/webhookController.js');
 
 dotenv.config();
 const allowedOrigins = {
@@ -20,13 +23,25 @@ const allowedOrigins = {
     'http://localhost:3000',
     'http://localhost:5173',
     'https://store.centerforholisticmedicine.com',
+    'https://siddhi-test.myshopify.com'
   ],
   production: [
     'https://standalone-main.vercel.app',
-    'https://store.centerforholisticmedicine.com'
+    'https://store.centerforholisticmedicine.com',
+    'https://siddhi-test.myshopify.com'
   ],
 };
-// Setup middlewares
+// app.post('/api/webhook/inventoryUpdate', bodyParser.raw({ type: 'application/json' }),
+//   verifyShopifyWebhook, 
+//   updateInventory 
+// );
+app.post(
+  '/api/webhook/OrderWebhook',
+  express.raw({ type: 'application/json' }),
+  verifyShopifyWebhook,
+  OrderWebhook
+);
+
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(cookieParser());
@@ -52,24 +67,23 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
+// app.use(express.raw({ type: "application/json" }));
 
-app.use(express.raw({ type: "application/json" }));
 // Connect to DB
-connectDB();      
+connectDB();
 // seeder(); 
 // eventseeder();
 // groupregistre();
- 
+
 // Routes
 app.use("/api", routes);
- 
+
 // Test route
 app.use("/", (req, res) => {
   res.send("Yes, now you can hit APIs");
 });
- 
+
 // Start the server
 server.listen(PORT, () => {
   console.log("Server is running on port", PORT);
 });
-  
