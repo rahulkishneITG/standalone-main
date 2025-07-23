@@ -22,6 +22,8 @@ const buildAttendeeData = (data) => ({
   groupLeaderId: data.groupLeaderId || null,
   groupLeaderName: data.groupLeaderName || null,
   eventName: data.eventName || null,
+  email_preferences_chm: data.email_preferences_chm || false,
+  email_preferences_dr_brownstein:data.email_preferences_dr_brownstein || false,
 });
 
 const getPaginatedEmail = async (queryParams = {}) => {

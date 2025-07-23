@@ -504,7 +504,7 @@ const createEventService = async (data) => {
       location,
       max_capacity,
       walk_in_capacity,
-      pre_registration_capacity,
+      pre_registration_capacity:max_capacity - walk_in_capacity,
       pre_registration_start,
       pre_registration_end,
       description,
@@ -525,7 +525,7 @@ const createEventService = async (data) => {
     const {
       SHOPIFY_STORE_DOMAIN: store,
       SHOPIFY_ADMIN_API_TOKEN: accessToken,
-      SHOPIFY_API_VERSION: apiVersion = '2025-07'
+      SHOPIFY_API_VERSION: apiVersion = '2024-04'
     } = process.env;
 
     if (!store || !accessToken) throw new Error('Missing Shopify configuration');
@@ -807,7 +807,7 @@ const createEventService = async (data) => {
       const variables = {
         input: {
           id: variantId,
-          price: priceAmount.toString() // Price must be string
+          price: priceAmount.toString()
         }
       };
     
@@ -843,7 +843,6 @@ const createEventService = async (data) => {
         };
       }
     };
-    // Save Walk-in Event if needed
     if (walk_in_capacity > 0) {
       const walkIn = new WalkInEvent({
         event_id: event._id,
@@ -908,7 +907,7 @@ const updateEvent = async (updateId, data) => {
   const {
     SHOPIFY_STORE_DOMAIN: store,
     SHOPIFY_ADMIN_API_TOKEN: accessToken,
-    SHOPIFY_API_VERSION: apiVersion = '2025-07'
+    SHOPIFY_API_VERSION: apiVersion = '2024-04'
   } = process.env;
   // Get Inventory Details
   const getInventoryDetails = async (productid) => {
@@ -1088,19 +1087,19 @@ const updateEvent = async (updateId, data) => {
 
   const updateVariantPrice = async (variantId, priceAmount) => {
     const mutation = `
-      mutation productVariantUpdate($input: ProductVariantInput!) {
-        productVariantUpdate(input: $input) {
-          productVariant {
-            id
-            price
-          }
-          userErrors {
-            field
-            message
+        mutation productVariantUpdate($input: ProductVariantInput!) {
+          productVariantUpdate(input: $input) {
+            productVariant {
+              id
+              price
+            }
+            userErrors {
+              field
+              message
+            }
           }
         }
-      }
-    `;
+      `;
   
     const variables = {
       input: {
@@ -1141,7 +1140,45 @@ const updateEvent = async (updateId, data) => {
       };
     }
   };
-  
+  const getWalkInRegistrations = async (eventId) => {
+    try {
+      const registrations = await Attendee.countDocuments({
+        event_id: eventId,
+        registration_type: 'walkin',
+      });
+      return registrations;
+    } catch (err) {
+      throw new Error(`Failed to get walk-in registrations: ${err.message}`);
+    }
+  };
+  const updateWalkInCapacityInTable = async (eventId, newWalkInCapacity,currentWalkInRegistrations ) => {
+    // Find the related walk-in table entry using event_id
+    const walkInRecord = await WalkInEvent.findOne({ event_id: eventId });
+    if (!walkInRecord) {
+      throw new Error('Walk-in record not found for the given event.');
+    }
+
+    // Update the walk_in_capacity and remainingWalkInCapacity
+    const remainingWalkInCapacity = newWalkInCapacity - currentWalkInRegistrations;
+
+    const updatedWalkInRecord = await WalkInEvent.findOneAndUpdate(
+      { event_id: eventId },
+      {
+        $set: {
+          walk_in_capacity: newWalkInCapacity,
+          remainingWalkInCapacity: remainingWalkInCapacity
+        }
+      },
+      { new: true }
+    );
+
+    if (!updatedWalkInRecord) {
+      throw new Error('Failed to update walk-in record.');
+    }
+
+    console.log('Updated Walk-in Record:', updatedWalkInRecord);
+    return updatedWalkInRecord;
+  };
 
 
 
@@ -1154,6 +1191,17 @@ const updateEvent = async (updateId, data) => {
   const cleanId = normalizeShopifyProductGID(rawId);
 
   const totalQty = data.max_capacity - data.walk_in_capacity;
+  data.pre_registration_capacity =totalQty;
+
+  const currentWalkInRegistrations = await getWalkInRegistrations(updateId);
+
+  // Check if the new walk-in capacity is sufficient
+  if (currentWalkInRegistrations > data.walk_in_capacity) {
+    throw new Error('Walk-in registrations exceed the new walk-in capacity.');
+  }
+
+  await updateWalkInCapacityInTable(updateId, data.walk_in_capacity,currentWalkInRegistrations );
+
   const { inventoryItemId, locationId, variantId } = await getInventoryDetails(cleanId);
   console.log('InventoryItemID:', inventoryItemId, 'LocationID:', locationId,"variantId",variantId);
 
